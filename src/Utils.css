@@ -1,0 +1,38 @@
+/**
+ * Overlay
+ */
+.input-overlay {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  padding: 0;
+  margin: 0;
+  z-index: 2;
+}
+
+/**
+ * Resizable container
+ */
+.bottom-resizable-container {
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.resize-zone {
+  position: absolute;
+  bottom: 0;
+  height: 10px;
+  width: 100%;
+  cursor: ns-resize;
+}
+
+/**
+ * Movable container
+ */
+.movable-container {
+  margin: 0;
+  padding: 0;
+}
