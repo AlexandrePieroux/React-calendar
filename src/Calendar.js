@@ -386,9 +386,13 @@ const CalendarEvent = props => {
     };
   }, [overlayBounds, startDate]);
 
+  const getLocalHourString = () => {
+    return `${getHourString(startDate)} - ${getHourString(endDate)}`;
+  };
+
   const [position, setPosition] = useState(getPosition());
   const [height, setHeight] = useState(getHeight());
-  const [hourString, setHourString] = useState("");
+  const [hourString, setHourString] = useState(getLocalHourString());
   const [className, setClassName] = useState("calendar-event-wrapper");
 
   // Only used update display of the tile
@@ -488,6 +492,7 @@ const CalendarEventsOverlay = ({
     };
   }, [colRef, rowRef]);
 
+  const [localEvents, setLocalEvents] = useState(events);
   const [modalShow, setModalShow] = useState(false);
   const [dimensions, setDimensions] = useState(getDimensions());
   const [selectedEvent, setSelectedEvent] = useState(false);
@@ -511,6 +516,13 @@ const CalendarEventsOverlay = ({
       window.removeEventListener("resize", handleResize);
     };
   }, [setDimensions, getDimensions]);
+
+  /**
+   * Trigger event update
+   */
+  useEffect(() => {
+    setLocalEvents(events);
+  }, [events]);
 
   /**
    * Utilites functions
@@ -615,9 +627,10 @@ const CalendarEventsOverlay = ({
    * Modal CB functions
    */
   const eventCreationConfirm = useCallback(
-    event => {
+    e => {
       if (onEventCreation) {
-        onEventCreation(event);
+        e.resizeOnCreation = false;
+        onEventCreation(e);
         setSelectedEvent(false);
         updateTileLayout();
       }
@@ -626,7 +639,7 @@ const CalendarEventsOverlay = ({
   );
 
   const eventCreationCancel = useCallback(
-    event => {
+    e => {
       if (!modalShow) return;
     },
     [modalShow]
@@ -636,16 +649,15 @@ const CalendarEventsOverlay = ({
    * Event CB functions
    */
   const eventHeightChangeStop = useCallback(
-    event => {
+    e => {
       if (!overlayCreationMode) {
         updateTileLayout();
-        onEventUpdate(event, event);
+        onEventUpdate(e, e);
       }
     },
     [overlayCreationMode, updateTileLayout, onEventUpdate]
   );
 
-  console.log("Overlay rendered again");
   return (
     <InputOverlay
       onMouseDown={overlayEventCreationStart}
@@ -660,7 +672,7 @@ const CalendarEventsOverlay = ({
         onCreate={eventCreationConfirm}
       />
 
-      {[...(selectedEvent ? [selectedEvent] : []), ...events].map(e => (
+      {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
         <CalendarEvent
           // Dimensions data
           onHeightChangeStop={() => eventHeightChangeStop(e)}
@@ -700,10 +712,11 @@ const Calendar = props => {
    * View displayed is stored in state.
    * View chooser is in header
    */
-  const [events, setEvents] = useState();
+  const [events, setEvents] = useState([]);
   const [selectedDay, setSelectedDay] = useState(getTodayDate());
   const [view, setView] = useState(viewEnum.DAY);
 
+  // TODO: Does not re-render the events in GUI
   const createEvent = useCallback(
     newEvent => {
       setEvents([newEvent, ...events]);
