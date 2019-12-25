@@ -316,31 +316,20 @@ const CalendarEventCreationModal = props => {
   );
 };
 
-const CalendarEventPopover = props => {
-  const { placement, calEvent, onHide, onUpdate, onDelete } = props;
+const CalendarEventPopover = React.forwardRef((props, ref) => {
   // TODO
   return (
-    <OverlayTrigger
-      trigger="click"
-      key={placement}
-      placement={placement}
-      overlay={
-        <Popover id={`popover-positioned-${placement}`}>
-          <Popover.Title as="h3">{`Popover ${placement}`}</Popover.Title>
-          <Popover.Content>
-            <strong>Holy guacamole!</strong> Check this info.
-          </Popover.Content>
-        </Popover>
-      }
-    >
-      <Button variant="secondary">Popover on {placement}</Button>
-    </OverlayTrigger>
+    <Popover ref={ref} {...props}>
+      <Popover.Title as="h3">{"Hello World"}</Popover.Title>
+      <Popover.Content>
+        <strong>Holy guacamole!</strong> Check this info.
+      </Popover.Content>
+    </Popover>
   );
-};
+});
 
 const CalendarEvent = props => {
   const {
-    onClick,
     onHeightChangeStop,
     overlayBounds,
     dayWidth,
@@ -431,36 +420,40 @@ const CalendarEvent = props => {
   );
 
   return (
-    <MovableContainer
-      onClick={onClick}
-      className={className}
-      snapColumnWidth={dayWidth}
-      initialPosition={position}
-      style={{
-        position: "absolute",
-        width: dayWidth * 0.9 + "px"
-      }}
+    <OverlayTrigger
+      trigger="click"
+      overlay={<CalendarEventPopover id="popover-contained" />}
     >
-      <BottomResizableContainer
-        heightModulo={minuteHeight * 15}
-        resizeOnCreation={resizeOnCreation}
-        onHeightChange={onHeightChange}
-        onHeightChangeStop={onHeightChangeStopHandler}
+      <MovableContainer
+        className={className}
+        snapColumnWidth={dayWidth}
+        initialPosition={position}
         style={{
-          color: "white",
-          height: height + "px"
+          position: "absolute",
+          width: dayWidth * 0.9 + "px"
         }}
       >
-        <div className="container calendar-event">
-          <div className="row description-event">
-            <div className="col">
-              <p>{hourString}</p>
-              <span>{description}</span>
+        <BottomResizableContainer
+          heightModulo={minuteHeight * 15}
+          resizeOnCreation={resizeOnCreation}
+          onHeightChange={onHeightChange}
+          onHeightChangeStop={onHeightChangeStopHandler}
+          style={{
+            color: "white",
+            height: height + "px"
+          }}
+        >
+          <div className="container calendar-event">
+            <div className="row description-event">
+              <div className="col">
+                <p>{hourString}</p>
+                <span>{description}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </BottomResizableContainer>
-    </MovableContainer>
+        </BottomResizableContainer>
+      </MovableContainer>
+    </OverlayTrigger>
   );
 };
 
@@ -685,11 +678,6 @@ const CalendarEventsOverlay = ({
           endDate={e.endDate}
           setEndDate={date => (e.endDate = date)}
           description={e.description}
-          // Props
-          onClick={clickEvent => {
-            clickEvent.stopPropagation();
-            console.log("Event clicked");
-          }}
           // Others
           key={e.renderKey || e.id}
         />
