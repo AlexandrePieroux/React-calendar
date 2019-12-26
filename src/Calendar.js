@@ -7,6 +7,7 @@ import React, {
 } from "react";
 
 import {
+  Row,
   Col,
   Card,
   Accordion,
@@ -14,11 +15,17 @@ import {
   Modal,
   OverlayTrigger,
   Popover,
-  Button
+  Button,
+  Container
 } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faAlignJustify, faMapMarker } from "@fortawesome/free-solid-svg-icons";
+import {
+  faAlignJustify,
+  faMapMarker,
+  faClock,
+  faUserClock
+} from "@fortawesome/free-solid-svg-icons";
 
 import {
   getDOMElementAtPos,
@@ -316,17 +323,40 @@ const CalendarEventCreationModal = props => {
   );
 };
 
-const CalendarEventPopover = React.forwardRef((props, ref) => {
-  // TODO
-  return (
-    <Popover ref={ref} {...props}>
-      <Popover.Title as="h3">{"Hello World"}</Popover.Title>
-      <Popover.Content>
-        <strong>Holy guacamole!</strong> Check this info.
-      </Popover.Content>
-    </Popover>
-  );
-});
+const CalendarEventPopover = React.forwardRef(
+  ({ dateString, hourString, title, owner, description, ...props }, ref) => {
+    return (
+      <Popover ref={ref} {...props}>
+        <Popover.Title as="h3">{title}</Popover.Title>
+        <Popover.Content>
+          <Container>
+            <Row>
+              <Col md="1">
+                <FontAwesomeIcon icon={faClock} />
+              </Col>
+              <Col>
+                <strong>{hourString}</strong> {dateString}
+              </Col>
+            </Row>
+            <Row>
+              <Col md="1">
+                <FontAwesomeIcon icon={faUserClock} />
+              </Col>
+              <Col>
+                <strong>{owner}</strong>
+              </Col>
+            </Row>
+            <Row>
+              <Col>
+                <p>{description}</p>
+              </Col>
+            </Row>
+          </Container>
+        </Popover.Content>
+      </Popover>
+    );
+  }
+);
 
 const CalendarEvent = props => {
   const {
@@ -338,7 +368,9 @@ const CalendarEvent = props => {
     startDate,
     endDate,
     setEndDate,
-    description
+    title,
+    description,
+    owner
   } = props;
 
   const getHeight = useCallback(() => {
@@ -422,7 +454,16 @@ const CalendarEvent = props => {
   return (
     <OverlayTrigger
       trigger="click"
-      overlay={<CalendarEventPopover id="popover-contained" />}
+      overlay={
+        <CalendarEventPopover
+          id="popover-contained"
+          dateString={startDate.toDateString()}
+          hourString={hourString}
+          title={title}
+          owner="Admin" // TODO: Test purpose, this will be retrieved throug data base
+          description={description}
+        />
+      }
     >
       <MovableContainer
         className={className}
@@ -439,18 +480,19 @@ const CalendarEvent = props => {
           onHeightChange={onHeightChange}
           onHeightChangeStop={onHeightChangeStopHandler}
           style={{
-            color: "white",
             height: height + "px"
           }}
         >
-          <div className="container calendar-event">
-            <div className="row description-event">
-              <div className="col">
-                <p>{hourString}</p>
-                <span>{description}</span>
-              </div>
-            </div>
-          </div>
+          <Container className="calendar-event">
+            <Row className="mx-2 mt-1">
+              <span>
+                <strong>{title}</strong>
+              </span>
+            </Row>
+            <Row className="description-event mx-2">
+              <p>{hourString}</p>
+            </Row>
+          </Container>
         </BottomResizableContainer>
       </MovableContainer>
     </OverlayTrigger>
@@ -678,6 +720,8 @@ const CalendarEventsOverlay = ({
           endDate={e.endDate}
           setEndDate={date => (e.endDate = date)}
           description={e.description}
+          // Props
+          title={e.title}
           // Others
           key={e.renderKey || e.id}
         />
@@ -708,6 +752,7 @@ const Calendar = props => {
   const createEvent = useCallback(
     newEvent => {
       setEvents([newEvent, ...events]);
+      console.log("Event Creation");
       console.log(events);
     },
     [events, setEvents]
@@ -723,6 +768,7 @@ const Calendar = props => {
       Object.assign(eventData, newEvent);
 
       setEvents(eventsCpy);
+      console.log("Event Update");
       console.log(eventData);
     },
     [events, setEvents]
@@ -733,6 +779,8 @@ const Calendar = props => {
       const key = oldEvent.renderKey || oldEvent.id;
       const id = oldEvent.renderKey ? "renderKey" : "id";
       setEvents(events.filter(event => event[id] !== key));
+
+      console.log("Event Cancel");
       console.log(events);
     },
     [events, setEvents]
