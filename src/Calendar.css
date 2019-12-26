@@ -185,3 +185,17 @@
   font-size: 11px;
   color: #002740;
 }
+
+/**
+ Event Popover
+*/
+.popover {
+  max-width: 500px;
+}
+
+.popover span.text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}

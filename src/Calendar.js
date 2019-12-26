@@ -16,7 +16,9 @@ import {
   OverlayTrigger,
   Popover,
   Button,
-  Container
+  Container,
+  ButtonGroup,
+  ButtonToolbar
 } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -327,7 +329,28 @@ const CalendarEventPopover = React.forwardRef(
   ({ dateString, hourString, title, owner, description, ...props }, ref) => {
     return (
       <Popover ref={ref} {...props}>
-        <Popover.Title as="h3">{title}</Popover.Title>
+        <Popover.Title as="h3">
+          <Container fluid={true}>
+            <Row>
+              <Col md="auto" className="mr-auto">
+                <span className="text">{title}</span>
+              </Col>
+              <Col md="auto">
+                <ButtonGroup>
+                  <Button variant="outline-secondary" size="sm">
+                    Edit
+                  </Button>{" "}
+                  <Button variant="outline-secondary" size="sm">
+                    Delete
+                  </Button>{" "}
+                  <Button variant="outline-secondary" size="sm">
+                    More
+                  </Button>
+                </ButtonGroup>
+              </Col>
+            </Row>
+          </Container>
+        </Popover.Title>
         <Popover.Content>
           <Container>
             <Row>
