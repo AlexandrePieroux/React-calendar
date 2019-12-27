@@ -17,8 +17,7 @@ import {
   Popover,
   Button,
   Container,
-  ButtonGroup,
-  ButtonToolbar
+  ButtonGroup
 } from "react-bootstrap";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -75,18 +74,26 @@ const CalendarDayHeaderWrapper = props => (
   </div>
 );
 
-const CalendarDayHeaderDay = ({ day, onClickCallBack }) => (
-  <div className="col border-cell" key={day}>
-    <div className="day-name">
-      {day.toLocaleString(window.navigator.language, {
-        weekday: "short"
-      })}
+const CalendarDayHeaderDay = ({ day, onClickCallBack }) => {
+  const todayDate = new Date().getDate();
+  return (
+    <div className="col border-cell" key={day}>
+      <div className="day-name">
+        {day.toLocaleString(window.navigator.language, {
+          weekday: "short"
+        })}
+      </div>
+      <div
+        className={
+          day.getDate() === todayDate ? "day-number today" : "day-number"
+        }
+        onClick={onClickCallBack}
+      >
+        {day.getDate()}
+      </div>
     </div>
-    <div className="day-number" onClick={onClickCallBack}>
-      {day.getDate()}
-    </div>
-  </div>
-);
+  );
+};
 
 const CalendarWeekHeader = ({ day, onClickCallBack }) => (
   <CalendarDayHeaderWrapper>

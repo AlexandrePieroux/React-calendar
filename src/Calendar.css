@@ -38,6 +38,7 @@
 }
 
 .calendar-header .col .day-number {
+  line-height: 47px;
   font-size: 26px;
   display: block;
   margin-left: auto;
@@ -48,9 +49,11 @@
   font-size: 11px;
 }
 
-.today {
+.calendar-header .col .today {
+  height: 47px;
+  width: 47px;
   border-radius: 50%;
-  background-color: #75a8ff;
+  background-color: cadetblue;
   color: white;
 }
 
