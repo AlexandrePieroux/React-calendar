@@ -5,6 +5,10 @@ import "./Utils.css";
 
 import moment from "moment";
 
+Number.prototype.mod = function(n) {
+  return ((this % n) + n) % n;
+};
+
 function preventGlobalMouseEvents() {
   document.body.style["pointer-events"] = "none";
 }
@@ -47,7 +51,9 @@ export function getDaysOfWeek(current) {
   var week = [];
   const currentDate = new Date(current);
   currentDate.setHours(0, 0, 0, 0);
-  currentDate.setDate(currentDate.getDate() - currentDate.getDay() + 1);
+  currentDate.setDate(
+    currentDate.getDate() - (currentDate.getDay() - 1).mod(7)
+  );
   for (var i = 0; i < 7; i++) {
     week.push(new Date(currentDate));
     currentDate.setDate(currentDate.getDate() + 1);
