@@ -159,6 +159,34 @@
   border-left: grey 1px solid;
 }
 
+.time-marker-wrapper {
+  position: absolute;
+  z-index: 200;
+  width: 100%;
+}
+
+.time-marker {
+  position: absolute;
+  z-index: 200;
+  border-top: #ff8686 solid 2px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.time-marker-tip {
+  background: #ff8686;
+  -webkit-border-radius: 50%;
+  border-radius: 50%;
+  content: "";
+  position: absolute;
+  height: 12px;
+  margin-left: -6.5px;
+  margin-top: -5px;
+  width: 12px;
+  z-index: 200;
+}
+
 /**
  Calendar Event
 */

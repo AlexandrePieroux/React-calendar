@@ -25,7 +25,10 @@ import {
   faAlignJustify,
   faMapMarker,
   faClock,
-  faUserClock
+  faUserClock,
+  faEdit,
+  faCopy,
+  faChevronCircleDown
 } from "@fortawesome/free-solid-svg-icons";
 
 import {
@@ -345,13 +348,13 @@ const CalendarEventPopover = React.forwardRef(
               <Col md="auto">
                 <ButtonGroup>
                   <Button variant="outline-secondary" size="sm">
-                    Edit
+                    <FontAwesomeIcon icon={faEdit} />
                   </Button>{" "}
                   <Button variant="outline-secondary" size="sm">
-                    Delete
+                    <FontAwesomeIcon icon={faCopy} />
                   </Button>{" "}
                   <Button variant="outline-secondary" size="sm">
-                    More
+                    <FontAwesomeIcon icon={faChevronCircleDown} />
                   </Button>
                 </ButtonGroup>
               </Col>
@@ -433,9 +436,12 @@ const CalendarEvent = props => {
 
     return {
       x: dayBounds.left - overlayBounds.left,
-      y: hourBounds.top - overlayBounds.top
+      y:
+        hourBounds.top -
+        overlayBounds.top +
+        minuteHeight * startDate.getMinutes()
     };
-  }, [overlayBounds, startDate]);
+  }, [overlayBounds, startDate, minuteHeight]);
 
   const getLocalHourString = () => {
     return `${getHourString(startDate)} - ${getHourString(endDate)}`;
@@ -729,6 +735,11 @@ const CalendarEventsOverlay = ({
       onMouseUp={overlayEventCreationStop}
       setOverlayRef={r => (overlayRef.current = r)}
     >
+      <CalendarTimeMarker
+        overlayBounds={dimensions.overlayBounds}
+        minuteHeight={dimensions.minuteHeight}
+      />
+
       <CalendarEventCreationModal
         show={modalShow}
         calEvent={selectedEvent}
@@ -757,6 +768,42 @@ const CalendarEventsOverlay = ({
         />
       ))}
     </InputOverlay>
+  );
+};
+
+const CalendarTimeMarker = props => {
+  const { overlayBounds, minuteHeight } = props;
+
+  const getOffset = useCallback(() => {
+    if (!overlayBounds) return 0;
+
+    const now = new Date();
+    const hour = now.getHours();
+    const hourDOM = getElementByDataId(
+      "hour-row",
+      "data-row-id",
+      hour.toString()
+    );
+    const bounds = hourDOM.getBoundingClientRect();
+
+    return bounds.top - overlayBounds.top - 1 + now.getMinutes() * minuteHeight;
+  }, [minuteHeight, overlayBounds]);
+
+  const [offset, setOffset] = useState(getOffset());
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setOffset(getOffset());
+    }, 60000);
+
+    return () => clearInterval(timerId);
+  }, [getOffset]);
+
+  return (
+    <div className="time-marker-wrapper" style={{ top: offset + "px" }}>
+      <div className="time-marker-tip" />
+      <div className="time-marker" />
+    </div>
   );
 };
 
