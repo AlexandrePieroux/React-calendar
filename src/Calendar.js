@@ -796,8 +796,9 @@ const CalendarTimeMarker = props => {
       setOffset(getOffset());
     }, 60000);
 
+    setOffset(getOffset());
     return () => clearInterval(timerId);
-  }, [getOffset]);
+  }, [setOffset, getOffset]);
 
   return (
     <div className="time-marker-wrapper" style={{ top: offset + "px" }}>
