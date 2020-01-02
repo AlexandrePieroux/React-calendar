@@ -1,3 +1,7 @@
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import "bootstrap-css-only/css/bootstrap.min.css";
+import "mdbreact/dist/css/mdb.css";
+
 import React, {
   useState,
   useCallback,
@@ -7,29 +11,26 @@ import React, {
 } from "react";
 
 import {
-  Row,
-  Col,
-  Card,
-  Accordion,
-  Form,
-  Modal,
-  OverlayTrigger,
-  Popover,
-  Button,
-  Container,
-  ButtonGroup
-} from "react-bootstrap";
-
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faAlignJustify,
-  faMapMarker,
-  faClock,
-  faUserClock,
-  faEdit,
-  faCopy,
-  faChevronCircleDown
-} from "@fortawesome/free-solid-svg-icons";
+  MDBRow,
+  MDBCol,
+  MDBModal,
+  MDBModalBody,
+  MDBInput,
+  MDBModalFooter,
+  MDBDatePicker,
+  MDBTimePicker,
+  MDBPopover,
+  MDBPopoverHeader,
+  MDBPopoverBody,
+  MDBBtn,
+  MDBContainer,
+  MDBBtnGroup,
+  MDBIcon,
+  MDBDropdown,
+  MDBDropdownToggle,
+  MDBDropdownMenu,
+  MDBDropdownItem
+} from "mdbreact";
 
 import {
   getDOMElementAtPos,
@@ -43,7 +44,8 @@ import {
   MovableContainer
 } from "./Utils";
 
-import "bootstrap/dist/css/bootstrap.css";
+import moment from "moment";
+
 import "./Calendar.css";
 
 /**
@@ -67,20 +69,20 @@ function preProcessEvents(events) {
 /**
  * Components utils
  */
-const CalendarDayHeaderWrapper = props => (
-  <div className="row calendar-header">
-    <div className="col timezone-cell">
+const CalendarDayHeaderWrapper = ({ children, ...props }) => (
+  <MDBRow className="calendar-header">
+    <MDBCol className="timezone-cell">
       <span>{getTimezoneStringShort()}</span>
-    </div>
-    <div className="col header-offset border-cell">&nbsp;</div>
-    {props.children}
-  </div>
+    </MDBCol>
+    <MDBCol className="header-offset border-cell">&nbsp;</MDBCol>
+    {children}
+  </MDBRow>
 );
 
 const CalendarDayHeaderDay = ({ day, onClickCallBack }) => {
   const todayDate = new Date().getDate();
   return (
-    <div className="col border-cell" key={day}>
+    <MDBCol className="border-cell" key={day}>
       <div className="day-name">
         {day.toLocaleString(window.navigator.language, {
           weekday: "short"
@@ -94,7 +96,7 @@ const CalendarDayHeaderDay = ({ day, onClickCallBack }) => {
       >
         {day.getDate()}
       </div>
-    </div>
+    </MDBCol>
   );
 };
 
@@ -110,53 +112,54 @@ const CalendarWeekHeader = ({ day, onClickCallBack }) => (
   </CalendarDayHeaderWrapper>
 );
 
-const CalendarDayHeaderCol = props => {
-  const { setRowReference, children } = props;
-  return (
-    <div className="row calendar-body">
-      {/* Row display overlay */}
-      <div className="col cell-rows">
-        <div className="container">
-          <div
-            ref={setRowReference}
-            className="row hour-row"
-            key="cell-0"
-            data-row-id="0"
-          >
-            <div className="col">&nbsp;</div>
-          </div>
-          {[...Array(23).keys()].map(hourCell => (
+const CalendarDayHeaderCol = React.forwardRef(
+  ({ setRowReference, children, ...props }, ref) => {
+    return (
+      <MDBRow className="calendar-body">
+        {/* Row display overlay */}
+        <MDBCol className="cell-rows">
+          <MDBContainer>
             <div
+              ref={setRowReference}
               className="row hour-row"
-              key={"cell-" + (hourCell + 1)}
-              data-row-id={hourCell + 1}
+              key="cell-0"
+              data-row-id="0"
             >
-              <div className="col">&nbsp;</div>
+              <MDBCol>&nbsp;</MDBCol>
             </div>
-          ))}
-        </div>
-      </div>
+            {[...Array(23).keys()].map(hourCell => (
+              <MDBRow
+                className="hour-row"
+                key={"cell-" + (hourCell + 1)}
+                data-row-id={hourCell + 1}
+              >
+                <MDBCol>&nbsp;</MDBCol>
+              </MDBRow>
+            ))}
+          </MDBContainer>
+        </MDBCol>
 
-      {/* Hour header display column */}
-      <div className="col hours-col">
-        <div className="container">
-          <div className="row hour-cell">
-            <div className="col">&nbsp;</div>
-          </div>
-          {[...Array(23).keys()].map(hourOfDay => (
-            <div className="row hour-cell" key={hourOfDay}>
-              <div className="col">
-                <span>{hourOfDay + 1}:00</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+        {/* Hour header display column */}
+        <MDBCol className="hours-col">
+          <MDBContainer>
+            <MDBRow className="hour-cell">
+              <MDBCol>&nbsp;</MDBCol>
+            </MDBRow>
+            {[...Array(23).keys()].map(hourOfDay => (
+              <MDBRow className="hour-cell" key={hourOfDay}>
+                <MDBCol>
+                  <span>{hourOfDay + 1}:00</span>
+                </MDBCol>
+              </MDBRow>
+            ))}
+          </MDBContainer>
+        </MDBCol>
 
-      {children}
-    </div>
-  );
-};
+        {children}
+      </MDBRow>
+    );
+  }
+);
 
 const CalendarDayCol = ({ dayOfWeek, setColReference }) => (
   <div
@@ -174,11 +177,11 @@ const CalendarEventCreationModal = props => {
 
   const titleRef = useRef();
 
-  const startDateRef = useRef();
-  const startDateHourRef = useRef();
+  const [startDate, setStartDate] = useState();
+  const [startDateTime, setStartDateTime] = useState();
 
-  const endDateRef = useRef();
-  const endDateHourRef = useRef();
+  const [endDate, setEndDate] = useState();
+  const [endDateTime, setEndDateTime] = useState();
 
   const descriptionRef = useRef();
   const locationRef = useRef();
@@ -202,191 +205,153 @@ const CalendarEventCreationModal = props => {
         title: titleRef.current.value,
         description: descriptionRef.current.value,
         location: locationRef.current.value,
-        startDate: new Date(
-          `${startDateRef.current.value}T${startDateHourRef.current.value}:00`
-        ),
-        endDate: new Date(
-          `${endDateRef.current.value}T${endDateHourRef.current.value}:00`
-        )
+        startDate: new Date(`${startDate}T${startDateTime}:00`),
+        endDate: new Date(`${endDate}T${endDateTime}:00`)
       });
 
       if (onCreate) onCreate(newEvent);
       if (onHide) onHide(e);
     },
-    [calEvent, onHide, onCreate]
+    [calEvent, onHide, onCreate, startDate, startDateTime, endDate, endDateTime]
   );
 
   return (
-    <Modal {...other} size="lg" centered onHide={onHide}>
-      <Form>
-        <Modal.Body>
-          <Form.Row>
-            <Col>
-              {/** Title */}
-              <Form.Row>
-                <Form.Group as={Col} controlId="newEventTitle">
-                  <Form.Control
-                    ref={titleRef}
-                    placeholder="New Event Title"
-                    defaultValue={calEvent && calEvent.title}
-                  />
-                </Form.Group>
-              </Form.Row>
-
-              {/** Start / End date */}
-              <Form.Row>
-                <Form.Group as={Col} controlId="newEventStartDate">
-                  <Form.Control
-                    ref={startDateRef}
-                    type="date"
-                    placeholder="Start Date"
-                    defaultValue={
-                      calEvent && calEvent.startDate.toLocaleDateString("en-CA")
-                    }
-                  />
-                </Form.Group>
-                <Form.Group as={Col} controlId="newEventStartTime">
-                  <Form.Control
-                    ref={startDateHourRef}
-                    type="time"
-                    placeholder="Hour"
-                    defaultValue={calEvent && getHourString(calEvent.startDate)}
-                  />
-                </Form.Group>
-
-                <Form.Label> - </Form.Label>
-
-                <Form.Group as={Col} controlId="newEventEndDate">
-                  <Form.Control
-                    ref={endDateRef}
-                    type="date"
-                    placeholder="End Date"
-                    defaultValue={
-                      calEvent && calEvent.endDate.toLocaleDateString("en-CA")
-                    }
-                  />
-                </Form.Group>
-                <Form.Group as={Col} controlId="newEventEndTime">
-                  <Form.Control
-                    ref={endDateHourRef}
-                    type="time"
-                    placeholder="Hour"
-                    defaultValue={calEvent && getHourString(calEvent.endDate)}
-                  />
-                </Form.Group>
-              </Form.Row>
-            </Col>
-          </Form.Row>
-
-          <Accordion>
-            {/** Description */}
-            <Card>
-              <Card.Header>
-                <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                  <FontAwesomeIcon icon={faAlignJustify} />{" "}
-                  <Form.Label>Description</Form.Label>
-                </Accordion.Toggle>
-              </Card.Header>
-
-              <Accordion.Collapse eventKey="0">
-                <Card.Body>
-                  <Form.Group controlId="newEventDescription">
-                    <Form.Control
-                      ref={descriptionRef}
-                      as="textarea"
-                      rows="3"
-                      placeholder="Description..."
-                    />
-                  </Form.Group>
-                </Card.Body>
-              </Accordion.Collapse>
-            </Card>
-
-            {/** Location */}
-            <Card>
-              <Card.Header>
-                <Accordion.Toggle as={Button} variant="link" eventKey="1">
-                  <FontAwesomeIcon icon={faMapMarker} />{" "}
-                  <Form.Label>Location</Form.Label>
-                </Accordion.Toggle>
-              </Card.Header>
-
-              <Accordion.Collapse eventKey="1">
-                <Card.Body>
-                  <Form.Group controlId="newEventLocation">
-                    <Form.Control ref={locationRef} placeholder="Location" />
-                  </Form.Group>
-                </Card.Body>
-              </Accordion.Collapse>
-            </Card>
-          </Accordion>
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button variant="secondary" onClick={closeHandler}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={createHandler}>
-            Create
-          </Button>
-        </Modal.Footer>
-      </Form>
-    </Modal>
+    <MDBModal {...other} onHide={onHide}>
+      <MDBModalBody>
+        <MDBInput
+          label="New Event Title"
+          group
+          type="text"
+          validate
+          error="wrong"
+          success="right"
+        />
+        <MDBRow>
+          <MDBCol>
+            <MDBDatePicker cancelLabel="Effacer" getValue={setStartDate} />
+          </MDBCol>
+          <MDBCol>{" - "}</MDBCol>
+          <MDBCol>
+            <MDBTimePicker
+              id="timePicker"
+              label="12hrs format"
+              getValue={setStartDateTime}
+            />
+          </MDBCol>
+        </MDBRow>
+        <MDBRow>
+          <MDBCol>
+            <MDBDatePicker cancelLabel="Effacer" getValue={setEndDate} />
+          </MDBCol>
+          <MDBCol>{" - "}</MDBCol>
+          <MDBCol>
+            <MDBTimePicker
+              id="timePicker"
+              label="12hrs format"
+              getValue={setEndDateTime}
+            />
+          </MDBCol>
+        </MDBRow>
+        <MDBInput
+          type="textarea"
+          rows="2"
+          label="Your message"
+          icon="pencil-alt"
+        />
+        <MDBInput
+          label="Location"
+          group
+          type="text"
+          validate
+          error="wrong"
+          success="right"
+        />
+      </MDBModalBody>
+      <MDBModalFooter>
+        <MDBBtn color="secondary" onClick={closeHandler}>
+          Close
+        </MDBBtn>
+        <MDBBtn color="primary" onClick={createHandler}>
+          Create
+        </MDBBtn>
+      </MDBModalFooter>
+    </MDBModal>
   );
 };
 
 const CalendarEventPopover = React.forwardRef(
-  ({ dateString, hourString, title, owner, description, ...props }, ref) => {
+  (
+    {
+      dateString,
+      hourString,
+      title,
+      owner,
+      description,
+      onEdit,
+      onCopy,
+      onDelete,
+      onDismiss,
+      children
+    },
+    ref
+  ) => {
     return (
-      <Popover ref={ref} {...props}>
-        <Popover.Title as="h3">
-          <Container fluid={true}>
-            <Row>
-              <Col md="auto" className="mr-auto">
-                <span className="text">{title}</span>
-              </Col>
-              <Col md="auto">
-                <ButtonGroup>
-                  <Button variant="outline-secondary" size="sm">
-                    <FontAwesomeIcon icon={faEdit} />
-                  </Button>{" "}
-                  <Button variant="outline-secondary" size="sm">
-                    <FontAwesomeIcon icon={faCopy} />
-                  </Button>{" "}
-                  <Button variant="outline-secondary" size="sm">
-                    <FontAwesomeIcon icon={faChevronCircleDown} />
-                  </Button>
-                </ButtonGroup>
-              </Col>
-            </Row>
-          </Container>
-        </Popover.Title>
-        <Popover.Content>
-          <Container>
-            <Row>
-              <Col md="1">
-                <FontAwesomeIcon icon={faClock} />
-              </Col>
-              <Col>
-                <strong>{hourString}</strong> {dateString}
-              </Col>
-            </Row>
-            <Row>
-              <Col md="1">
-                <FontAwesomeIcon icon={faUserClock} />
-              </Col>
-              <Col>
-                <strong>{owner}</strong>
-              </Col>
-            </Row>
-            <Row>
-              <Col>
-                <p>{description}</p>
-              </Col>
-            </Row>
-          </Container>
-        </Popover.Content>
-      </Popover>
+      <MDBPopover placement="top" popover clickable id="popper5">
+        {children}
+        <div>
+          <MDBPopoverHeader>
+            <MDBCol md="auto" className="mr-auto">
+              <span className="text">{title}</span>
+            </MDBCol>
+            <MDBCol xl="4" md="12">
+              <div className="btn-toolbar" role="toolbar">
+                <MDBBtnGroup className="mr-2" size="sm">
+                  <MDBBtn color="stylish-color lighten-2">
+                    <MDBIcon icon="edit" />
+                  </MDBBtn>
+                  <MDBBtn color="stylish-color lighten-2">
+                    <MDBIcon icon="heart" />
+                  </MDBBtn>
+                  <MDBDropdown basic color="stylish-color lighten-2">
+                    <MDBDropdownToggle caret color="info" className="h-100">
+                      <MDBIcon icon="heart" />
+                    </MDBDropdownToggle>
+                    <MDBDropdownMenu basic color="info">
+                      <MDBDropdownItem>Duplicate</MDBDropdownItem>
+                      <MDBDropdownItem>Send</MDBDropdownItem>
+                    </MDBDropdownMenu>
+                  </MDBDropdown>
+                </MDBBtnGroup>
+              </div>
+            </MDBCol>
+          </MDBPopoverHeader>
+          <MDBPopoverBody>
+            <MDBContainer>
+              <MDBRow>
+                <MDBCol md="1">
+                  <MDBIcon far icon="clock" />
+                </MDBCol>
+                <MDBCol>
+                  <strong>{hourString}</strong> {dateString}
+                </MDBCol>
+              </MDBRow>
+              <MDBRow>
+                <MDBCol md="1">
+                  <MDBIcon far icon="user" />
+                </MDBCol>
+                <MDBCol>
+                  <strong>{owner}</strong>
+                </MDBCol>
+              </MDBRow>
+              <MDBRow>
+                <MDBCol>
+                  <p>{description}</p>
+                </MDBCol>
+              </MDBRow>
+            </MDBContainer>
+          </MDBPopoverBody>
+        </div>
+      </MDBPopover>
     );
   }
 );
@@ -403,7 +368,10 @@ const CalendarEvent = props => {
     setEndDate,
     title,
     description,
-    owner
+    owner,
+    onEdit,
+    onCopy,
+    onDelete
   } = props;
 
   const getHeight = useCallback(() => {
@@ -488,18 +456,17 @@ const CalendarEvent = props => {
   );
 
   return (
-    <OverlayTrigger
-      trigger="click"
-      overlay={
-        <CalendarEventPopover
-          id="popover-contained"
-          dateString={startDate.toDateString()}
-          hourString={hourString}
-          title={title}
-          owner="Admin" // TODO: Test purpose, this will be retrieved throug data base
-          description={description}
-        />
-      }
+    <CalendarEventPopover
+      id="popover-contained"
+      dateString={startDate.toDateString()}
+      hourString={hourString}
+      title={title}
+      owner="Admin" // TODO: Test purpose, this will be retrieved throug data base
+      description={description}
+      onEdit={onEdit}
+      onCopy={onCopy}
+      onDelete={onDelete}
+      onDismiss={false}
     >
       <MovableContainer
         className={className}
@@ -519,19 +486,19 @@ const CalendarEvent = props => {
             height: height + "px"
           }}
         >
-          <Container className="calendar-event">
-            <Row className="mx-2 mt-1">
+          <MDBContainer className="calendar-event">
+            <MDBRow className="mx-2 mt-1">
               <span>
                 <strong>{title}</strong>
               </span>
-            </Row>
-            <Row className="description-event mx-2">
+            </MDBRow>
+            <MDBRow className="description-event mx-2">
               <p>{hourString}</p>
-            </Row>
-          </Container>
+            </MDBRow>
+          </MDBContainer>
         </BottomResizableContainer>
       </MovableContainer>
-    </OverlayTrigger>
+    </CalendarEventPopover>
   );
 };
 
@@ -697,6 +664,11 @@ const CalendarEventsOverlay = ({
   /**
    * Modal CB functions
    */
+  const eventEditStart = useCallback(e => {
+    setSelectedEvent(e);
+    setModalShow(true);
+  });
+
   const eventCreationConfirm = useCallback(
     e => {
       if (onEventCreation) {
@@ -751,10 +723,14 @@ const CalendarEventsOverlay = ({
       {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
         <CalendarEvent
           // Dimensions data
-          onHeightChangeStop={() => eventHeightChangeStop(e)}
           overlayBounds={dimensions.overlayBounds}
           dayWidth={dimensions.dayWidth}
           minuteHeight={dimensions.minuteHeight}
+          // Event Callbacks
+          onHeightChangeStop={() => eventHeightChangeStop(e)}
+          onEdit={() => eventEditStart(e)}
+          onCopy={false}
+          onDelete={false}
           // Event data
           resizeOnCreation={e.resizeOnCreation}
           startDate={e.startDate}
@@ -865,7 +841,7 @@ const Calendar = props => {
   );
 
   return (
-    <div className="container">
+    <MDBContainer>
       <CalendarHeader changeView={setView} />
       {view === viewEnum.DAY && (
         <CalendarDayView
@@ -876,7 +852,7 @@ const Calendar = props => {
           cancelEvent={cancelEvent}
         />
       )}
-    </div>
+    </MDBContainer>
   );
 };
 
@@ -916,10 +892,10 @@ const CalendarDayView = props => {
   }, [day, events]);
 
   return (
-    <div className="container calendar-day-view">
+    <MDBContainer>
       <CalendarWeekHeader day={day} onClickCallBack={switchDayHandler} />
       <CalendarDayBody events={filteredEvents} day={day} {...other} />
-    </div>
+    </MDBContainer>
   );
 };
 
@@ -940,15 +916,15 @@ const CalendarDayBody = props => {
       {...other}
       setRowReference={r => (rowRef.current = r)}
     >
-      <div className="col body-main-col">
-        <div className="container cell-columns">
-          <div className="row">
+      <MDBCol className="body-main-col">
+        <MDBContainer className="cell-columns">
+          <MDBRow>
             <CalendarDayCol
               setColReference={r => (colRef.current = r)}
               dayOfWeek={day}
             />
-          </div>
-        </div>
+          </MDBRow>
+        </MDBContainer>
         <CalendarEventsOverlay
           events={events}
           onEventCreation={createEvent}
@@ -957,7 +933,7 @@ const CalendarDayBody = props => {
           rowRef={rowRef}
           colRef={colRef}
         />
-      </div>
+      </MDBCol>
     </CalendarDayHeaderCol>
   );
 };

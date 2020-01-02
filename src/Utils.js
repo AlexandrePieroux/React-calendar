@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 
-import "bootstrap/dist/css/bootstrap.css";
 import "./Utils.css";
 
 import moment from "moment";
