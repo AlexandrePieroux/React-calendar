@@ -229,3 +229,14 @@
   text-overflow: ellipsis;
   display: inline-block;
 }
+
+/**
+ Calendar Modal
+*/
+.clean-input {
+  cursor: pointer;
+  padding: 5px 15px;
+  border: none;
+  border-radius: 5px;
+  font: inherit;
+}

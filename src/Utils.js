@@ -13,7 +13,7 @@ function preventGlobalMouseEvents() {
 }
 
 function restoreGlobalMouseEvents() {
-  document.body.style["pointer-events"] = "auto";
+  document.body.style["pointer-events"] = null;
 }
 
 function displayOnTwoDigits(number) {
@@ -190,84 +190,6 @@ export const BottomResizableContainer = props => {
     >
       {children}
       <div className="resize-zone" onMouseDown={startResize} />
-    </div>
-  );
-};
-
-export const MovableContainer = props => {
-  const {
-    snapColumnWidth,
-    initialPosition,
-    children,
-    className,
-    style,
-    onClick,
-    ...other
-  } = props;
-
-  const [pos, setPosition] = useState(initialPosition);
-
-  const positionRef = useRef(pos);
-  const isMovingRef = useRef(false);
-
-  useEffect(() => {
-    positionRef.current = initialPosition;
-    setPosition(initialPosition);
-  }, [initialPosition]);
-
-  const move = useCallback(
-    e => {
-      if (isMovingRef.current) {
-        positionRef.current = {
-          x:
-            Math.floor(
-              (positionRef.current.x + e.movementX) / snapColumnWidth
-            ) * snapColumnWidth,
-          y: positionRef.current.y + e.movementY
-        };
-        setPosition(positionRef);
-      }
-    },
-    [snapColumnWidth]
-  );
-
-  const stopMove = useCallback(
-    e => {
-      restoreGlobalMouseEvents();
-      isMovingRef.current = false;
-
-      if (onClick) onClick(e);
-
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", stopMove);
-    },
-    [move, onClick]
-  );
-
-  const initMove = useCallback(() => {
-    preventGlobalMouseEvents();
-    isMovingRef.current = true;
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", stopMove);
-  }, [move, stopMove]);
-
-  const startMove = useCallback(
-    e => {
-      if (typeof e.button === "number" && e.button !== 0) return false;
-      e.stopPropagation();
-      initMove();
-    },
-    [initMove]
-  );
-
-  return (
-    <div
-      {...other}
-      className={"movable-container " + className || ""}
-      style={{ ...style, top: pos.y + "px", left: pos.x + "px" }}
-      onMouseDown={startMove}
-    >
-      {children}
     </div>
   );
 };

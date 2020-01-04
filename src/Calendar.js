@@ -1,6 +1,7 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap-css-only/css/bootstrap.min.css";
 import "mdbreact/dist/css/mdb.css";
+import "react-datepicker/dist/react-datepicker.css";
 
 import React, {
   useState,
@@ -17,8 +18,6 @@ import {
   MDBModalBody,
   MDBInput,
   MDBModalFooter,
-  MDBDatePicker,
-  MDBTimePicker,
   MDBPopover,
   MDBPopoverHeader,
   MDBPopoverBody,
@@ -32,6 +31,8 @@ import {
   MDBDropdownItem
 } from "mdbreact";
 
+import DatePicker from "react-datepicker";
+
 import {
   getDOMElementAtPos,
   getTodayDate,
@@ -40,11 +41,8 @@ import {
   getElementByDataId,
   getHourString,
   InputOverlay,
-  BottomResizableContainer,
-  MovableContainer
+  BottomResizableContainer
 } from "./Utils";
-
-import moment from "moment";
 
 import "./Calendar.css";
 
@@ -173,105 +171,115 @@ const CalendarDayCol = ({ dayOfWeek, setColReference }) => (
 );
 
 const CalendarEventCreationModal = props => {
-  const { calEvent, onHide, onCreate, onCancel, ...other } = props;
+  const { isOpen, toggle, calEvent, onCreate, onCancel, ...other } = props;
+
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
 
   const titleRef = useRef();
-
-  const [startDate, setStartDate] = useState();
-  const [startDateTime, setStartDateTime] = useState();
-
-  const [endDate, setEndDate] = useState();
-  const [endDateTime, setEndDateTime] = useState();
-
   const descriptionRef = useRef();
   const locationRef = useRef();
-
-  useEffect(() => {});
 
   const closeHandler = useCallback(
     e => {
       e.stopPropagation();
       if (calEvent && onCancel) onCancel(calEvent);
-      if (onHide) onHide(e);
+      if (toggle) toggle(e);
     },
-    [onCancel, calEvent, onHide]
+    [onCancel, calEvent, toggle]
   );
 
   const createHandler = useCallback(
     e => {
-      e.stopPropagation();
       var newEvent = Object.assign({}, calEvent);
       newEvent = Object.assign(newEvent, {
         title: titleRef.current.value,
         description: descriptionRef.current.value,
         location: locationRef.current.value,
-        startDate: new Date(`${startDate}T${startDateTime}:00`),
-        endDate: new Date(`${endDate}T${endDateTime}:00`)
+        startDate: new Date(startDate),
+        endDate: new Date(endDate)
       });
 
       if (onCreate) onCreate(newEvent);
-      if (onHide) onHide(e);
     },
-    [calEvent, onHide, onCreate, startDate, startDateTime, endDate, endDateTime]
+    [calEvent, onCreate, startDate, endDate]
+  );
+
+  const DatePickerCustomInput = ({ value, onClick }) => (
+    <button className="clean-input" onClick={onClick}>
+      {value}
+    </button>
   );
 
   return (
-    <MDBModal {...other} onHide={onHide}>
+    <MDBModal
+      className="form-elegant"
+      backdrop={false}
+      isOpen={isOpen}
+      toggle={toggle}
+    >
       <MDBModalBody>
-        <MDBInput
-          label="New Event Title"
-          group
-          type="text"
-          validate
-          error="wrong"
-          success="right"
-        />
-        <MDBRow>
-          <MDBCol>
-            <MDBDatePicker cancelLabel="Effacer" getValue={setStartDate} />
-          </MDBCol>
-          <MDBCol>{" - "}</MDBCol>
-          <MDBCol>
-            <MDBTimePicker
-              id="timePicker"
-              label="12hrs format"
-              getValue={setStartDateTime}
-            />
-          </MDBCol>
-        </MDBRow>
-        <MDBRow>
-          <MDBCol>
-            <MDBDatePicker cancelLabel="Effacer" getValue={setEndDate} />
-          </MDBCol>
-          <MDBCol>{" - "}</MDBCol>
-          <MDBCol>
-            <MDBTimePicker
-              id="timePicker"
-              label="12hrs format"
-              getValue={setEndDateTime}
-            />
-          </MDBCol>
-        </MDBRow>
-        <MDBInput
-          type="textarea"
-          rows="2"
-          label="Your message"
-          icon="pencil-alt"
-        />
-        <MDBInput
-          label="Location"
-          group
-          type="text"
-          validate
-          error="wrong"
-          success="right"
-        />
+        <form className="mx-3 grey-text">
+          <MDBInput
+            label="Title"
+            group
+            type="text"
+            validate
+            error="wrong"
+            success="right"
+          />
+          <MDBRow>
+            <MDBCol>
+              <MDBIcon far icon="calendar-alt" size="2x" />
+              <DatePicker
+                selected={startDate}
+                onChange={date => setStartDate(date)}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="time"
+                dateFormat="dd/MM/yyyy h:mm"
+                customInput={<DatePickerCustomInput />}
+              />
+              {" - "}
+              <DatePicker
+                selected={endDate}
+                onChange={date => setEndDate(date)}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
+                timeCaption="time"
+                dateFormat="h:mm dd/MM/yyyy"
+                customInput={<DatePickerCustomInput />}
+              />
+            </MDBCol>
+          </MDBRow>
+          <MDBInput
+            label="Description"
+            group
+            type="textarea"
+            validate
+            rows="2"
+            error="wrong"
+            success="right"
+            icon="edit"
+          />
+          <MDBInput
+            label="Location"
+            group
+            type="text"
+            validate
+            error="wrong"
+            success="right"
+            icon="map-marker-alt"
+          />
+        </form>
       </MDBModalBody>
       <MDBModalFooter>
-        <MDBBtn color="secondary" onClick={closeHandler}>
+        <MDBBtn color="secondary" onMouseDown={closeHandler}>
           Close
         </MDBBtn>
-        <MDBBtn color="primary" onClick={createHandler}>
+        <MDBBtn color="primary" onMouseDown={createHandler}>
           Create
         </MDBBtn>
       </MDBModalFooter>
@@ -279,82 +287,78 @@ const CalendarEventCreationModal = props => {
   );
 };
 
-const CalendarEventPopover = React.forwardRef(
-  (
-    {
-      dateString,
-      hourString,
-      title,
-      owner,
-      description,
-      onEdit,
-      onCopy,
-      onDelete,
-      onDismiss,
-      children
-    },
-    ref
-  ) => {
-    return (
-      <MDBPopover placement="top" popover clickable id="popper5">
-        {children}
-        <div>
-          <MDBPopoverHeader>
-            <MDBCol md="auto" className="mr-auto">
-              <span className="text">{title}</span>
-            </MDBCol>
-            <MDBCol xl="4" md="12">
-              <div className="btn-toolbar" role="toolbar">
-                <MDBBtnGroup className="mr-2" size="sm">
-                  <MDBBtn color="stylish-color lighten-2">
-                    <MDBIcon icon="edit" />
-                  </MDBBtn>
-                  <MDBBtn color="stylish-color lighten-2">
+const CalendarEventPopover = props => {
+  const {
+    dateString,
+    hourString,
+    title,
+    owner,
+    description,
+    onEdit,
+    onCopy,
+    onDelete,
+    onDismiss,
+    children
+  } = props;
+  return (
+    <MDBPopover popover clickable domElement>
+      {children}
+      <div>
+        <MDBPopoverHeader>
+          <MDBCol md="auto" className="mr-auto">
+            <span className="text">{title}</span>
+          </MDBCol>
+          <MDBCol xl="4" md="12">
+            <div className="btn-toolbar" role="toolbar">
+              <MDBBtnGroup className="mr-2" size="sm">
+                <MDBBtn color="stylish-color lighten-2">
+                  <MDBIcon icon="edit" />
+                </MDBBtn>
+                <MDBBtn color="stylish-color lighten-2">
+                  <MDBIcon icon="heart" />
+                </MDBBtn>
+                <MDBDropdown color="stylish-color lighten-2">
+                  <MDBDropdownToggle color="info" className="h-100">
                     <MDBIcon icon="heart" />
-                  </MDBBtn>
-                  <MDBDropdown basic color="stylish-color lighten-2">
-                    <MDBDropdownToggle caret color="info" className="h-100">
-                      <MDBIcon icon="heart" />
-                    </MDBDropdownToggle>
-                    <MDBDropdownMenu basic color="info">
-                      <MDBDropdownItem>Duplicate</MDBDropdownItem>
-                      <MDBDropdownItem>Send</MDBDropdownItem>
-                    </MDBDropdownMenu>
-                  </MDBDropdown>
-                </MDBBtnGroup>
-              </div>
-            </MDBCol>
-          </MDBPopoverHeader>
-          <MDBPopoverBody>
-            <MDBContainer>
-              <MDBRow>
-                <MDBCol md="1">
-                  <MDBIcon far icon="clock" />
-                </MDBCol>
-                <MDBCol>
-                  <strong>{hourString}</strong> {dateString}
-                </MDBCol>
-              </MDBRow>
-              <MDBRow>
-                <MDBCol md="1">
-                  <MDBIcon far icon="user" />
-                </MDBCol>
-                <MDBCol>
-                  <strong>{owner}</strong>
-                </MDBCol>
-              </MDBRow>
-              <MDBRow>
-                <MDBCol>
-                  <p>{description}</p>
-                </MDBCol>
-              </MDBRow>
-            </MDBContainer>
-          </MDBPopoverBody>
-        </div>
-      </MDBPopover>
-    );
-  }
-);
+                  </MDBDropdownToggle>
+                  <MDBDropdownMenu color="info">
+                    <MDBDropdownItem>Duplicate</MDBDropdownItem>
+                    <MDBDropdownItem>Send</MDBDropdownItem>
+                  </MDBDropdownMenu>
+                </MDBDropdown>
+              </MDBBtnGroup>
+            </div>
+          </MDBCol>
+        </MDBPopoverHeader>
+        <MDBPopoverBody>
+          <MDBContainer>
+            <MDBRow>
+              <MDBCol md="1">
+                <MDBIcon far icon="clock" />
+              </MDBCol>
+              <MDBCol>
+                <strong>{hourString}</strong> {dateString}
+              </MDBCol>
+            </MDBRow>
+            <MDBRow>
+              <MDBCol md="1">
+                <MDBIcon far icon="user" />
+              </MDBCol>
+              <MDBCol>
+                <strong>{owner}</strong>
+              </MDBCol>
+            </MDBRow>
+            <MDBRow>
+              <MDBCol>
+                <p>{description}</p>
+              </MDBCol>
+            </MDBRow>
+          </MDBContainer>
+        </MDBPopoverBody>
+      </div>
+    </MDBPopover>
+  );
+};
 
 const CalendarEvent = props => {
   const {
@@ -468,13 +472,12 @@ const CalendarEvent = props => {
       onDelete={onDelete}
       onDismiss={false}
     >
-      <MovableContainer
-        className={className}
-        snapColumnWidth={dayWidth}
-        initialPosition={position}
+      <div
         style={{
           position: "absolute",
-          width: dayWidth * 0.9 + "px"
+          width: dayWidth * 0.9 + "px",
+          top: position.y + "px",
+          left: position.x + "px"
         }}
       >
         <BottomResizableContainer
@@ -497,7 +500,7 @@ const CalendarEvent = props => {
             </MDBRow>
           </MDBContainer>
         </BottomResizableContainer>
-      </MovableContainer>
+      </div>
     </CalendarEventPopover>
   );
 };
@@ -636,18 +639,11 @@ const CalendarEventsOverlay = ({
     }
   }, [overlayRef, dimensions.dayWidth]);
 
-  const onModalHide = useCallback(() => {
-    updateTileLayout();
-    setSelectedEvent(false);
-    setModalShow(false);
-  }, [updateTileLayout]);
-
   /**
    * InputOverlay CB functions
    */
   const overlayEventCreationStart = useCallback(
     e => {
-      e.stopPropagation();
       if (modalShow) return;
       setOverlayCreationMode(true);
       setSelectedEvent(createEvent(e));
@@ -658,16 +654,22 @@ const CalendarEventsOverlay = ({
   const overlayEventCreationStop = useCallback(e => {
     setModalShow(true);
     setOverlayCreationMode(false);
-    e.stopPropagation();
   }, []);
 
   /**
    * Modal CB functions
    */
-  const eventEditStart = useCallback(e => {
-    setSelectedEvent(e);
-    setModalShow(true);
-  });
+  const modalToggle = useCallback(
+    e => {
+      setModalShow(!modalShow);
+      if (modalShow) {
+        setSelectedEvent(false);
+        updateTileLayout();
+      }
+      e.stopPropagation();
+    },
+    [modalShow, setModalShow, updateTileLayout]
+  );
 
   const eventCreationConfirm = useCallback(
     e => {
@@ -679,13 +681,6 @@ const CalendarEventsOverlay = ({
       }
     },
     [onEventCreation, updateTileLayout]
-  );
-
-  const eventCreationCancel = useCallback(
-    e => {
-      if (!modalShow) return;
-    },
-    [modalShow]
   );
 
   /**
@@ -712,13 +707,14 @@ const CalendarEventsOverlay = ({
         minuteHeight={dimensions.minuteHeight}
       />
 
-      <CalendarEventCreationModal
-        show={modalShow}
-        calEvent={selectedEvent}
-        onHide={onModalHide}
-        onCancel={eventCreationCancel}
-        onCreate={eventCreationConfirm}
-      />
+      <div onMouseDown={e => e.stopPropagation()}>
+        <CalendarEventCreationModal
+          isOpen={modalShow}
+          toggle={modalToggle}
+          calEvent={selectedEvent}
+          onCreate={eventCreationConfirm}
+        />
+      </div>
 
       {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
         <CalendarEvent
@@ -728,7 +724,7 @@ const CalendarEventsOverlay = ({
           minuteHeight={dimensions.minuteHeight}
           // Event Callbacks
           onHeightChangeStop={() => eventHeightChangeStop(e)}
-          onEdit={() => eventEditStart(e)}
+          onEdit={false}
           onCopy={false}
           onDelete={false}
           // Event data
