@@ -1,7 +1,9 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap-css-only/css/bootstrap.min.css";
 import "mdbreact/dist/css/mdb.css";
-import "react-datepicker/dist/react-datepicker.css";
+import DateFnsUtils from "@date-io/date-fns";
+
+import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 
 import React, {
   useState,
@@ -30,8 +32,6 @@ import {
   MDBDropdownMenu,
   MDBDropdownItem
 } from "mdbreact";
-
-import DatePicker from "react-datepicker";
 
 import {
   getDOMElementAtPos,
@@ -173,12 +173,18 @@ const CalendarDayCol = ({ dayOfWeek, setColReference }) => (
 const CalendarEventCreationModal = props => {
   const { isOpen, toggle, calEvent, onCreate, onCancel, ...other } = props;
 
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  console.log("Start date " + calEvent.startDate);
+  console.log("Start date " + calEvent.endDate);
 
-  const titleRef = useRef();
-  const descriptionRef = useRef();
-  const locationRef = useRef();
+  const [title, setTitle] = useState("");
+  const [startDate, setStartDate] = useState(new Date(calEvent.startDate));
+  const [endDate, setEndDate] = useState(new Date(calEvent.endDate));
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+
+  const handleInput = setFunction => e => {
+    setFunction(e.target.value);
+  };
 
   const closeHandler = useCallback(
     e => {
@@ -193,33 +199,22 @@ const CalendarEventCreationModal = props => {
     e => {
       var newEvent = Object.assign({}, calEvent);
       newEvent = Object.assign(newEvent, {
-        title: titleRef.current.value,
-        description: descriptionRef.current.value,
-        location: locationRef.current.value,
+        title: title,
+        description: description,
+        location: location,
         startDate: new Date(startDate),
         endDate: new Date(endDate)
       });
 
       if (onCreate) onCreate(newEvent);
     },
-    [calEvent, onCreate, startDate, endDate]
-  );
-
-  const DatePickerCustomInput = ({ value, onClick }) => (
-    <button className="clean-input" onClick={onClick}>
-      {value}
-    </button>
+    [calEvent, onCreate, title, description, location, startDate, endDate]
   );
 
   return (
-    <MDBModal
-      className="form-elegant"
-      backdrop={false}
-      isOpen={isOpen}
-      toggle={toggle}
-    >
+    <MDBModal isOpen={isOpen} toggle={toggle} full-height position="right">
       <MDBModalBody>
-        <form className="mx-3 grey-text">
+        <form className="mx-3 grey-text" onMouseDown={e => e.stopPropagation()}>
           <MDBInput
             label="Title"
             group
@@ -227,31 +222,27 @@ const CalendarEventCreationModal = props => {
             validate
             error="wrong"
             success="right"
+            name="title"
+            onInput={handleInput(setTitle)}
           />
           <MDBRow>
             <MDBCol>
               <MDBIcon far icon="calendar-alt" size="2x" />
-              <DatePicker
-                selected={startDate}
-                onChange={date => setStartDate(date)}
-                showTimeSelect
-                timeFormat="HH:mm"
-                timeIntervals={15}
-                timeCaption="time"
-                dateFormat="dd/MM/yyyy h:mm"
-                customInput={<DatePickerCustomInput />}
-              />
-              {" - "}
-              <DatePicker
-                selected={endDate}
-                onChange={date => setEndDate(date)}
-                showTimeSelect
-                timeFormat="HH:mm"
-                timeIntervals={15}
-                timeCaption="time"
-                dateFormat="h:mm dd/MM/yyyy"
-                customInput={<DatePickerCustomInput />}
-              />
+              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+                <DateTimePicker
+                  variant="inline"
+                  label="Start"
+                  value={startDate}
+                  onChange={date => setStartDate(date)}
+                />
+                {" - "}
+                <DateTimePicker
+                  variant="inline"
+                  label="End"
+                  value={endDate}
+                  onChange={date => setEndDate(date)}
+                />
+              </MuiPickersUtilsProvider>
             </MDBCol>
           </MDBRow>
           <MDBInput
@@ -259,10 +250,12 @@ const CalendarEventCreationModal = props => {
             group
             type="textarea"
             validate
-            rows="2"
+            rows="1"
             error="wrong"
             success="right"
             icon="edit"
+            name="description"
+            onInput={handleInput(setDescription)}
           />
           <MDBInput
             label="Location"
@@ -272,6 +265,8 @@ const CalendarEventCreationModal = props => {
             error="wrong"
             success="right"
             icon="map-marker-alt"
+            name="location"
+            onInput={handleInput(setLocation)}
           />
         </form>
       </MDBModalBody>
@@ -465,7 +460,7 @@ const CalendarEvent = props => {
       dateString={startDate.toDateString()}
       hourString={hourString}
       title={title}
-      owner="Admin" // TODO: Test purpose, this will be retrieved throug data base
+      owner="Admin" // TODO: Test purpose
       description={description}
       onEdit={onEdit}
       onCopy={onCopy}
@@ -666,7 +661,6 @@ const CalendarEventsOverlay = ({
         setSelectedEvent(false);
         updateTileLayout();
       }
-      e.stopPropagation();
     },
     [modalShow, setModalShow, updateTileLayout]
   );
@@ -707,14 +701,14 @@ const CalendarEventsOverlay = ({
         minuteHeight={dimensions.minuteHeight}
       />
 
-      <div onMouseDown={e => e.stopPropagation()}>
+      <MDBContainer onMouseDown={e => e.stopPropagation()}>
         <CalendarEventCreationModal
           isOpen={modalShow}
           toggle={modalToggle}
           calEvent={selectedEvent}
           onCreate={eventCreationConfirm}
         />
-      </div>
+      </MDBContainer>
 
       {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
         <CalendarEvent
