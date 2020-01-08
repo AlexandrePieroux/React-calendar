@@ -1,6 +1,7 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap-css-only/css/bootstrap.min.css";
 import "mdbreact/dist/css/mdb.css";
+
 import DateFnsUtils from "@date-io/date-fns";
 
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
@@ -212,7 +213,13 @@ const CalendarEventCreationModal = props => {
   );
 
   return (
-    <MDBModal isOpen={isOpen} toggle={toggle} full-height position="right">
+    <MDBModal
+      isOpen={isOpen}
+      toggle={toggle}
+      fullHeight
+      position="right"
+      animation="right"
+    >
       <MDBModalBody>
         <form className="mx-3 grey-text" onMouseDown={e => e.stopPropagation()}>
           <MDBInput
@@ -225,26 +232,29 @@ const CalendarEventCreationModal = props => {
             name="title"
             onInput={handleInput(setTitle)}
           />
-          <MDBRow>
-            <MDBCol>
-              <MDBIcon far icon="calendar-alt" size="2x" />
-              <MuiPickersUtilsProvider utils={DateFnsUtils}>
+          <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <MDBRow>
+              <MDBCol>
                 <DateTimePicker
                   variant="inline"
                   label="Start"
                   value={startDate}
                   onChange={date => setStartDate(date)}
                 />
-                {" - "}
+              </MDBCol>
+            </MDBRow>
+            <MDBRow>
+              <MDBCol>
                 <DateTimePicker
                   variant="inline"
                   label="End"
                   value={endDate}
                   onChange={date => setEndDate(date)}
                 />
-              </MuiPickersUtilsProvider>
-            </MDBCol>
-          </MDBRow>
+              </MDBCol>
+            </MDBRow>
+          </MuiPickersUtilsProvider>
+
           <MDBInput
             label="Description"
             group
@@ -253,7 +263,6 @@ const CalendarEventCreationModal = props => {
             rows="1"
             error="wrong"
             success="right"
-            icon="edit"
             name="description"
             onInput={handleInput(setDescription)}
           />
@@ -264,7 +273,6 @@ const CalendarEventCreationModal = props => {
             validate
             error="wrong"
             success="right"
-            icon="map-marker-alt"
             name="location"
             onInput={handleInput(setLocation)}
           />
