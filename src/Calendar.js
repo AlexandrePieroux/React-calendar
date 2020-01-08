@@ -174,14 +174,16 @@ const CalendarDayCol = ({ dayOfWeek, setColReference }) => (
 const CalendarEventCreationModal = props => {
   const { isOpen, toggle, calEvent, onCreate, onCancel, ...other } = props;
 
-  console.log("Start date " + calEvent.startDate);
-  console.log("Start date " + calEvent.endDate);
-
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(new Date(calEvent.startDate));
-  const [endDate, setEndDate] = useState(new Date(calEvent.endDate));
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+
+  useEffect(() => {
+    setStartDate(new Date(calEvent.startDate));
+    setEndDate(new Date(calEvent.endDate));
+  }, [calEvent.startDate, calEvent.endDate]);
 
   const handleInput = setFunction => e => {
     setFunction(e.target.value);
