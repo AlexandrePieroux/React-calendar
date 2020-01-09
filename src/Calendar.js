@@ -189,13 +189,25 @@ const CalendarEventCreationModal = props => {
     setFunction(e.target.value);
   };
 
+  const toggleHandler = useCallback(
+    e => {
+      setTitle("");
+      setStartDate(new Date());
+      setEndDate(new Date());
+      setDescription("");
+      setLocation("");
+      if (toggle) toggle(e);
+    },
+    [setTitle, setStartDate, setEndDate, setDescription, setLocation, toggle]
+  );
+
   const closeHandler = useCallback(
     e => {
       e.stopPropagation();
       if (calEvent && onCancel) onCancel(calEvent);
-      if (toggle) toggle(e);
+      toggleHandler();
     },
-    [onCancel, calEvent, toggle]
+    [onCancel, calEvent, toggleHandler]
   );
 
   const createHandler = useCallback(
@@ -210,7 +222,7 @@ const CalendarEventCreationModal = props => {
       });
 
       if (onCreate) onCreate(newEvent);
-      if (toggle) toggle(e);
+      toggleHandler();
     },
     [
       calEvent,
@@ -220,7 +232,7 @@ const CalendarEventCreationModal = props => {
       location,
       startDate,
       endDate,
-      toggle
+      toggleHandler
     ]
   );
 
@@ -488,6 +500,7 @@ const CalendarEvent = props => {
       onDismiss={false}
     >
       <div
+        onMouseDown={e => e.stopPropagation()}
         className={className}
         style={{
           position: "absolute",
@@ -554,32 +567,6 @@ const CalendarEventsOverlay = ({
   const [dimensions, setDimensions] = useState(getDimensions());
   const [selectedEvent, setSelectedEvent] = useState(false);
   const [overlayCreationMode, setOverlayCreationMode] = useState(false);
-
-  /**
-   * Windows effect function
-   */
-  useEffect(() => {
-    function handleResize() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {}, 250);
-      setDimensions(getDimensions());
-    }
-
-    var resizeTimer;
-    window.addEventListener("resize", handleResize);
-    setDimensions(getDimensions());
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [setDimensions, getDimensions]);
-
-  /**
-   * Trigger event update
-   */
-  useEffect(() => {
-    setLocalEvents(events);
-  }, [events]);
 
   /**
    * Utilites functions
@@ -656,6 +643,39 @@ const CalendarEventsOverlay = ({
   }, [overlayRef, dimensions.dayWidth]);
 
   /**
+   * Windows effect function
+   */
+  useEffect(() => {
+    function handleResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {}, 250);
+      setDimensions(getDimensions());
+    }
+
+    var resizeTimer;
+    window.addEventListener("resize", handleResize);
+    setDimensions(getDimensions());
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [setDimensions, getDimensions]);
+
+  /**
+   * Trigger event update
+   */
+  useEffect(() => {
+    setLocalEvents(events);
+  }, [events]);
+
+  /**
+   * Update tile layout as soon as the localEvents changes (create, update, delete)
+   */
+  useEffect(() => {
+    updateTileLayout();
+  }, [localEvents]);
+
+  /**
    * InputOverlay CB functions
    */
   const overlayEventCreationStart = useCallback(
@@ -677,13 +697,12 @@ const CalendarEventsOverlay = ({
    */
   const modalToggle = useCallback(
     e => {
-      setModalShow(!modalShow);
       if (modalShow) {
         setSelectedEvent(false);
-        updateTileLayout();
       }
+      setModalShow(!modalShow);
     },
-    [modalShow, setModalShow, updateTileLayout]
+    [modalShow, setModalShow]
   );
 
   const eventCreationConfirm = useCallback(
@@ -692,11 +711,8 @@ const CalendarEventsOverlay = ({
         e.resizeOnCreation = false;
         onEventCreation(e);
       }
-
-      updateTileLayout();
-      setSelectedEvent(false);
     },
-    [onEventCreation, updateTileLayout]
+    [onEventCreation]
   );
 
   /**
@@ -705,11 +721,10 @@ const CalendarEventsOverlay = ({
   const eventHeightChangeStop = useCallback(
     e => {
       if (!overlayCreationMode) {
-        updateTileLayout();
         onEventUpdate(e, e);
       }
     },
-    [overlayCreationMode, updateTileLayout, onEventUpdate]
+    [overlayCreationMode, onEventUpdate]
   );
 
   return (

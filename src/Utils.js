@@ -185,7 +185,7 @@ export const BottomResizableContainer = props => {
     <div
       {...other}
       ref={thisRef}
-      className={"bottom-resizable-container " + className || ""}
+      className={"bottom-resizable-container " + (className || "")}
       style={compStyle}
     >
       {children}
