@@ -505,8 +505,7 @@ const CalendarEvent = props => {
         style={{
           position: "absolute",
           width: dayWidth * 0.9 + "px",
-          top: position.y + "px",
-          left: position.x + "px"
+          top: position.y + "px"
         }}
       >
         <BottomResizableContainer
@@ -673,7 +672,7 @@ const CalendarEventsOverlay = ({
    */
   useEffect(() => {
     updateTileLayout();
-  }, [localEvents]);
+  });
 
   /**
    * InputOverlay CB functions
