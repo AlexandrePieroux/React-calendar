@@ -210,8 +210,18 @@ const CalendarEventCreationModal = props => {
       });
 
       if (onCreate) onCreate(newEvent);
+      if (toggle) toggle(e);
     },
-    [calEvent, onCreate, title, description, location, startDate, endDate]
+    [
+      calEvent,
+      onCreate,
+      title,
+      description,
+      location,
+      startDate,
+      endDate,
+      toggle
+    ]
   );
 
   return (
@@ -281,11 +291,11 @@ const CalendarEventCreationModal = props => {
         </form>
       </MDBModalBody>
       <MDBModalFooter>
-        <MDBBtn color="secondary" onMouseDown={closeHandler}>
-          Close
-        </MDBBtn>
-        <MDBBtn color="primary" onMouseDown={createHandler}>
+        <MDBBtn color="mdb-color" onMouseDown={createHandler}>
           Create
+        </MDBBtn>
+        <MDBBtn color="mdb-color" outline onMouseDown={closeHandler}>
+          Close
         </MDBBtn>
       </MDBModalFooter>
     </MDBModal>
@@ -478,6 +488,7 @@ const CalendarEvent = props => {
       onDismiss={false}
     >
       <div
+        className={className}
         style={{
           position: "absolute",
           width: dayWidth * 0.9 + "px",
@@ -494,7 +505,7 @@ const CalendarEvent = props => {
             height: height + "px"
           }}
         >
-          <MDBContainer className="calendar-event">
+          <MDBContainer className={"calendar-event"}>
             <MDBRow className="mx-2 mt-1">
               <span>
                 <strong>{title}</strong>
@@ -680,9 +691,10 @@ const CalendarEventsOverlay = ({
       if (onEventCreation) {
         e.resizeOnCreation = false;
         onEventCreation(e);
-        setSelectedEvent(false);
-        updateTileLayout();
       }
+
+      updateTileLayout();
+      setSelectedEvent(false);
     },
     [onEventCreation, updateTileLayout]
   );
