@@ -203,7 +203,6 @@ const CalendarEventCreationModal = props => {
 
   const closeHandler = useCallback(
     e => {
-      e.stopPropagation();
       if (calEvent && onCancel) onCancel(calEvent);
       toggleHandler();
     },
@@ -245,7 +244,7 @@ const CalendarEventCreationModal = props => {
       animation="right"
     >
       <MDBModalBody>
-        <form className="mx-3 grey-text" onMouseDown={e => e.stopPropagation()}>
+        <form className="mx-3 grey-text">
           <MDBInput
             label="Title"
             group
@@ -500,7 +499,7 @@ const CalendarEvent = props => {
       onDismiss={false}
     >
       <div
-        onMouseDown={e => e.stopPropagation()}
+        onMouseDown={console.log("Event event mouse down")}
         className={className}
         style={{
           position: "absolute",
@@ -637,6 +636,8 @@ const CalendarEventsOverlay = ({
         width = width > 35 ? width : 35; // Min width
         e.style.width = width + "px";
       };
+
+      // Recursion start point
       makeLayer(elements, [], 0, "");
     }
   }, [overlayRef, dimensions.dayWidth]);
@@ -737,14 +738,12 @@ const CalendarEventsOverlay = ({
         minuteHeight={dimensions.minuteHeight}
       />
 
-      <MDBContainer onMouseDown={e => e.stopPropagation()}>
-        <CalendarEventCreationModal
-          isOpen={modalShow}
-          toggle={modalToggle}
-          calEvent={selectedEvent}
-          onCreate={eventCreationConfirm}
-        />
-      </MDBContainer>
+      <CalendarEventCreationModal
+        isOpen={modalShow}
+        toggle={modalToggle}
+        calEvent={selectedEvent}
+        onCreate={eventCreationConfirm}
+      />
 
       {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
         <CalendarEvent

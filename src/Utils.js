@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  createRef
+} from "react";
 
 import "./Utils.css";
 
@@ -87,7 +93,17 @@ export function getHourString(date) {
  */
 export const InputOverlay = props => {
   const { onMouseDown, onMouseUp, onClick, setOverlayRef, ...other } = props;
+
+  const ref = createRef();
+
+  const setRef = r => {
+    if (setOverlayRef) setOverlayRef(r);
+    ref.current = r;
+  };
+
   const onMouseDownHandler = e => {
+    if (e.target !== ref.current) return;
+
     preventGlobalMouseEvents();
     if (onMouseDown) onMouseDown(e);
     window.addEventListener("mouseup", onMouseUpHandler);
@@ -102,7 +118,7 @@ export const InputOverlay = props => {
   return (
     <div
       {...other}
-      ref={setOverlayRef}
+      ref={setRef}
       className="col input-overlay"
       onMouseDown={onMouseDownHandler}
     />
@@ -169,7 +185,6 @@ export const BottomResizableContainer = props => {
   const startResize = useCallback(
     e => {
       if (typeof e.button === "number" && e.button !== 0) return false;
-      e.stopPropagation();
       initResizing();
     },
     [initResizing]
