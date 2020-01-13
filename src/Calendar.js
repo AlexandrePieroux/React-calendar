@@ -2,6 +2,8 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap-css-only/css/bootstrap.min.css";
 import "mdbreact/dist/css/mdb.css";
 
+import { loadCSS } from "fg-loadcss";
+
 import DateFnsUtils from "@date-io/date-fns";
 
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
@@ -320,41 +322,50 @@ const CalendarEventPopover = props => {
     title,
     owner,
     description,
+    location,
     onEdit,
     onCopy,
     onDelete,
     onDismiss,
     children
   } = props;
+
+  useEffect(() => {
+    loadCSS(
+      "https://use.fontawesome.com/releases/v5.1.0/css/all.css",
+      document.querySelector("#font-awesome-css")
+    );
+  }, []);
+
   return (
     <MDBPopover popover clickable domElement>
       {children}
       <div>
         <MDBPopoverHeader>
-          <MDBCol md="auto" className="mr-auto">
-            <span className="text">{title}</span>
-          </MDBCol>
-          <MDBCol xl="4" md="12">
-            <div className="btn-toolbar" role="toolbar">
-              <MDBBtnGroup className="mr-2" size="sm">
-                <MDBBtn color="stylish-color lighten-2">
-                  <MDBIcon icon="edit" />
+          <MDBRow>
+            <MDBCol>
+              <span className="text">{title}</span>
+            </MDBCol>
+            <MDBCol>
+              <MDBBtnGroup>
+                <MDBBtn color="stylish-color lighten-2" size="sm">
+                  <MDBIcon icon="edit" className="mr-1" />
                 </MDBBtn>
-                <MDBBtn color="stylish-color lighten-2">
+                <MDBBtn color="stylish-color lighten-2" size="sm">
                   <MDBIcon icon="heart" />
                 </MDBBtn>
-                <MDBDropdown color="stylish-color lighten-2">
-                  <MDBDropdownToggle color="info" className="h-100">
-                    <MDBIcon icon="heart" />
+                <MDBDropdown size="sm">
+                  <MDBDropdownToggle color="default">
+                    <MDBIcon icon="ellipsis-v" />
                   </MDBDropdownToggle>
-                  <MDBDropdownMenu color="info">
+                  <MDBDropdownMenu color="default" basic>
                     <MDBDropdownItem>Duplicate</MDBDropdownItem>
                     <MDBDropdownItem>Send</MDBDropdownItem>
                   </MDBDropdownMenu>
                 </MDBDropdown>
               </MDBBtnGroup>
-            </div>
-          </MDBCol>
+            </MDBCol>
+          </MDBRow>
         </MDBPopoverHeader>
         <MDBPopoverBody>
           <MDBContainer>
@@ -379,6 +390,14 @@ const CalendarEventPopover = props => {
                 <p>{description}</p>
               </MDBCol>
             </MDBRow>
+            <MDBRow>
+              <MDBCol md="1">
+                <MDBIcon far icon="user" />
+              </MDBCol>
+              <MDBCol>
+                <p>{location}</p>
+              </MDBCol>
+            </MDBRow>
           </MDBContainer>
         </MDBPopoverBody>
       </div>
@@ -399,6 +418,7 @@ const CalendarEvent = props => {
     title,
     description,
     owner,
+    location,
     onEdit,
     onCopy,
     onDelete
@@ -486,20 +506,16 @@ const CalendarEvent = props => {
   );
 
   return (
-    <CalendarEventPopover
-      id="popover-contained"
-      dateString={startDate.toDateString()}
-      hourString={hourString}
-      title={title}
-      owner="Admin" // TODO: Test purpose
-      description={description}
-      onEdit={onEdit}
-      onCopy={onCopy}
-      onDelete={onDelete}
-      onDismiss={false}
+    <BottomResizableContainer
+      heightModulo={minuteHeight * 15}
+      resizeOnCreation={resizeOnCreation}
+      onHeightChange={onHeightChange}
+      onHeightChangeStop={onHeightChangeStopHandler}
+      style={{
+        height: height + "px"
+      }}
     >
       <div
-        onMouseDown={console.log("Event event mouse down")}
         className={className}
         style={{
           position: "absolute",
@@ -507,28 +523,37 @@ const CalendarEvent = props => {
           top: position.y + "px"
         }}
       >
-        <BottomResizableContainer
-          heightModulo={minuteHeight * 15}
-          resizeOnCreation={resizeOnCreation}
-          onHeightChange={onHeightChange}
-          onHeightChangeStop={onHeightChangeStopHandler}
-          style={{
-            height: height + "px"
-          }}
+        <CalendarEventPopover
+          id="popover-contained"
+          dateString={startDate.toDateString()}
+          hourString={hourString}
+          title={title}
+          owner={owner}
+          location={location}
+          description={description}
+          onEdit={onEdit}
+          onCopy={onCopy}
+          onDelete={onDelete}
+          onDismiss={false}
         >
-          <MDBContainer className={"calendar-event"}>
-            <MDBRow className="mx-2 mt-1">
-              <span>
-                <strong>{title}</strong>
-              </span>
-            </MDBRow>
-            <MDBRow className="description-event mx-2">
-              <p>{hourString}</p>
-            </MDBRow>
-          </MDBContainer>
-        </BottomResizableContainer>
+          <div>
+            <BottomResizableContainer.Body>
+              <MDBContainer className={"calendar-event"}>
+                <MDBRow className="mx-2 mt-1">
+                  <span>
+                    <strong>{title}</strong>
+                  </span>
+                </MDBRow>
+                <MDBRow className="description-event mx-2">
+                  <p>{hourString}</p>
+                </MDBRow>
+              </MDBContainer>
+            </BottomResizableContainer.Body>
+          </div>
+        </CalendarEventPopover>
+        <BottomResizableContainer.ResizeZone />
       </div>
-    </CalendarEventPopover>
+    </BottomResizableContainer>
   );
 };
 
@@ -762,6 +787,8 @@ const CalendarEventsOverlay = ({
           endDate={e.endDate}
           setEndDate={date => (e.endDate = date)}
           description={e.description}
+          owner={"Admin"}
+          location={e.location}
           // Props
           title={e.title}
           // Others

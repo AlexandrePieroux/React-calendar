@@ -2,8 +2,10 @@ import React, {
   useState,
   useCallback,
   useRef,
-  useEffect,
-  createRef
+  useMemo,
+  useContext,
+  createRef,
+  createContext
 } from "react";
 
 import "./Utils.css";
@@ -125,28 +127,56 @@ export const InputOverlay = props => {
   );
 };
 
+const BRCContext = createContext();
+
+const BRCBody = props => {
+  const { className, ...other } = props;
+  const { resizableContainerRef, compStyle } = useContext(BRCContext);
+
+  return (
+    <div
+      {...other}
+      ref={resizableContainerRef}
+      className={"bottom-resizable-container " + (className || "")}
+      style={compStyle}
+    >
+      {props.children}
+    </div>
+  );
+};
+
+const BRCResizeZone = props => {
+  const { startResize } = useContext(BRCContext);
+  return (
+    <div className="resize-zone" onMouseDown={startResize}>
+      {props.children}
+    </div>
+  );
+};
+
 export const BottomResizableContainer = props => {
   const {
     heightModulo = 1,
     onHeightChange = null,
     onHeightChangeStop = null,
     resizeOnCreation = false,
-    children,
-    className,
-    style,
-    ...other
+    style
   } = props;
 
   const [compStyle, setCompStyle] = useState(style);
 
-  const thisRef = useRef();
+  const resizableContainerRef = useRef();
   const resizeOnCreationRef = useRef(resizeOnCreation);
   const isResizingRef = useRef(resizeOnCreation);
 
   const resize = useCallback(
     e => {
-      if (thisRef.current && isResizingRef.current && heightModulo !== 0) {
-        var boundingRect = thisRef.current.getBoundingClientRect();
+      if (
+        resizableContainerRef.current &&
+        isResizingRef.current &&
+        heightModulo !== 0
+      ) {
+        var boundingRect = resizableContainerRef.current.getBoundingClientRect();
         var height = e.offsetY - boundingRect.top;
         var heightSnapped = Math.ceil(height / heightModulo) * heightModulo;
 
@@ -164,8 +194,8 @@ export const BottomResizableContainer = props => {
       restoreGlobalMouseEvents();
       isResizingRef.current = false;
 
-      if (onHeightChangeStop && thisRef.current) {
-        var boundingRect = thisRef.current.getBoundingClientRect();
+      if (onHeightChangeStop && resizableContainerRef.current) {
+        var boundingRect = resizableContainerRef.current.getBoundingClientRect();
         onHeightChangeStop(boundingRect.height);
       }
 
@@ -190,6 +220,15 @@ export const BottomResizableContainer = props => {
     [initResizing]
   );
 
+  const value = useMemo(
+    () => ({
+      compStyle,
+      resizableContainerRef,
+      startResize
+    }),
+    [compStyle, startResize]
+  );
+
   // Allow resizing at creation of the event
   if (resizeOnCreationRef.current) {
     initResizing();
@@ -197,14 +236,9 @@ export const BottomResizableContainer = props => {
   }
 
   return (
-    <div
-      {...other}
-      ref={thisRef}
-      className={"bottom-resizable-container " + (className || "")}
-      style={compStyle}
-    >
-      {children}
-      <div className="resize-zone" onMouseDown={startResize} />
-    </div>
+    <BRCContext.Provider value={value}>{props.children}</BRCContext.Provider>
   );
 };
+
+BottomResizableContainer.Body = BRCBody;
+BottomResizableContainer.ResizeZone = BRCResizeZone;
