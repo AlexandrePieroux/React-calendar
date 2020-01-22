@@ -1,11 +1,20 @@
-import "@fortawesome/fontawesome-free/css/all.min.css";
-import "bootstrap-css-only/css/bootstrap.min.css";
-import "mdbreact/dist/css/mdb.css";
-
 import { loadCSS } from "fg-loadcss";
-
 import DateFnsUtils from "@date-io/date-fns";
 
+import {
+  Grid,
+  Box,
+  Button,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl
+} from "@material-ui/core";
+import { SpeedDial, SpeedDialIcon, SpeedDialAction } from "@material-ui/lab";
+import { FileCopyIcon, ShareIcon, UserIcon } from "@material-ui/icons";
+import { makeStyles } from "@material-ui/core/styles";
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 
 import React, {
@@ -15,26 +24,6 @@ import React, {
   useRef,
   useMemo
 } from "react";
-
-import {
-  MDBRow,
-  MDBCol,
-  MDBModal,
-  MDBModalBody,
-  MDBInput,
-  MDBModalFooter,
-  MDBPopover,
-  MDBPopoverHeader,
-  MDBPopoverBody,
-  MDBBtn,
-  MDBContainer,
-  MDBBtnGroup,
-  MDBIcon,
-  MDBDropdown,
-  MDBDropdownToggle,
-  MDBDropdownMenu,
-  MDBDropdownItem
-} from "mdbreact";
 
 import {
   getDOMElementAtPos,
@@ -70,39 +59,38 @@ function preProcessEvents(events) {
 /**
  * Components utils
  */
-const CalendarDayHeaderWrapper = ({ children, ...props }) => (
-  <MDBRow className="calendar-header">
-    <MDBCol className="timezone-cell">
-      <span>{getTimezoneStringShort()}</span>
-    </MDBCol>
-    <MDBCol className="header-offset border-cell">&nbsp;</MDBCol>
-    {children}
-  </MDBRow>
-);
-
 const CalendarDayHeaderDay = ({ day, onClickCallBack }) => {
   const todayDate = new Date().getDate();
   return (
-    <MDBCol className="border-cell" key={day}>
-      <div className="day-name">
+    <Grid item className="border-cell" key={day} xs>
+      <Box className="day-name">
         {day.toLocaleString(window.navigator.language, {
           weekday: "short"
         })}
-      </div>
-      <div
+      </Box>
+      <Box
         className={
           day.getDate() === todayDate ? "day-number today" : "day-number"
         }
         onClick={onClickCallBack}
       >
         {day.getDate()}
-      </div>
-    </MDBCol>
+      </Box>
+    </Grid>
   );
 };
 
 const CalendarWeekHeader = ({ day, onClickCallBack }) => (
-  <CalendarDayHeaderWrapper>
+  <Grid container item className="calendar-header">
+    {/** Timezone cell */}
+    <Grid item className="timezone-cell">
+      <Box component="span">{getTimezoneStringShort()}</Box>
+    </Grid>
+    <Grid item className="header-offset border-cell">
+      <Box>&nbsp;</Box>
+    </Grid>
+
+    {/** Day cells */}
     {getDaysOfWeek(day).map(weekDay => (
       <CalendarDayHeaderDay
         key={"calendar-header-day-" + weekDay.getDay()}
@@ -110,109 +98,121 @@ const CalendarWeekHeader = ({ day, onClickCallBack }) => (
         onClickCallBack={() => onClickCallBack(weekDay)}
       />
     ))}
-  </CalendarDayHeaderWrapper>
+  </Grid>
 );
 
-const CalendarDayHeaderCol = React.forwardRef(
-  ({ setRowReference, children, ...props }, ref) => {
-    return (
-      <MDBRow className="calendar-body">
-        {/* Row display overlay */}
-        <MDBCol className="cell-rows">
-          <MDBContainer>
-            <div
-              ref={setRowReference}
-              className="row hour-row"
-              key="cell-0"
-              data-row-id="0"
-            >
-              <MDBCol>&nbsp;</MDBCol>
-            </div>
-            {[...Array(23).keys()].map(hourCell => (
-              <MDBRow
-                className="hour-row"
-                key={"cell-" + (hourCell + 1)}
-                data-row-id={hourCell + 1}
-              >
-                <MDBCol>&nbsp;</MDBCol>
-              </MDBRow>
-            ))}
-          </MDBContainer>
-        </MDBCol>
+const CalendarDayHeaderCol = ({ setRowReference, children }) => {
+  return (
+    <Grid container item className="calendar-body">
+      {/* Row overlay (display only)*/}
+      <Grid container direction="column" className="cell-rows">
+        <Box
+          ref={setRowReference}
+          className="hour-row"
+          key="cell-0"
+          data-row-id="0"
+        >
+          &nbsp;
+        </Box>
+        {[...Array(23).keys()].map(hourCell => (
+          <Box
+            className="hour-row"
+            key={"cell-" + (hourCell + 1)}
+            data-row-id={hourCell + 1}
+          >
+            &nbsp;
+          </Box>
+        ))}
+      </Grid>
 
-        {/* Hour header display column */}
-        <MDBCol className="hours-col">
-          <MDBContainer>
-            <MDBRow className="hour-cell">
-              <MDBCol>&nbsp;</MDBCol>
-            </MDBRow>
-            {[...Array(23).keys()].map(hourOfDay => (
-              <MDBRow className="hour-cell" key={hourOfDay}>
-                <MDBCol>
-                  <span>{hourOfDay + 1}:00</span>
-                </MDBCol>
-              </MDBRow>
-            ))}
-          </MDBContainer>
-        </MDBCol>
+      {/* Hour header display column */}
+      <Grid
+        item
+        container
+        direction="column"
+        className="hours-col"
+        style={{ width: 40 }}
+      >
+        <Grid item className="hour-cell">
+          &nbsp;
+        </Grid>
+        {[...Array(23).keys()].map(hourOfDay => (
+          <Grid item className="hour-cell" key={hourOfDay}>
+            <Box component="span">{hourOfDay + 1}:00</Box>
+          </Grid>
+        ))}
+      </Grid>
 
-        {children}
-      </MDBRow>
-    );
-  }
-);
+      {children}
+    </Grid>
+  );
+};
 
-const CalendarDayCol = ({ dayOfWeek, setColReference }) => (
-  <div
+const CalendarDayCol = ({ dayOfWeek, setColReference, children }) => (
+  <Grid
+    container
+    item
     ref={setColReference}
-    className="col day-col"
+    className="day-col"
     key={"col-" + dayOfWeek.getTime()}
     data-col-id={dayOfWeek.getTime()}
+    xs
   >
-    &nbsp;
-  </div>
+    {children}
+  </Grid>
 );
 
-const CalendarEventCreationModal = props => {
-  const { isOpen, toggle, calEvent, onCreate, onCancel, ...other } = props;
+const CalendarEventModal = props => {
+  const { open, calEvent, onCreate, onCancel } = props;
 
+  const useStyles = makeStyles(theme => ({
+    formControl: {
+      marginTop: theme.spacing(2),
+      minWidth: 120
+    },
+    formControlLabel: {
+      marginTop: theme.spacing(1)
+    }
+  }));
+
+  const classes = useStyles();
+  const [openState, setOpenState] = useState(false);
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState();
+  const [endDate, setEndDate] = useState();
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
 
   useEffect(() => {
-    setStartDate(new Date(calEvent.startDate));
-    setEndDate(new Date(calEvent.endDate));
+    setStartDate(calEvent.startDate);
+    setEndDate(calEvent.endDate);
   }, [calEvent.startDate, calEvent.endDate]);
 
-  const handleInput = setFunction => e => {
-    setFunction(e.target.value);
-  };
+  useEffect(() => {
+    setOpenState(open);
+  }, [open]);
 
-  const toggleHandler = useCallback(
+  const reset = useCallback(
     e => {
       setTitle("");
-      setStartDate(new Date());
-      setEndDate(new Date());
       setDescription("");
       setLocation("");
-      if (toggle) toggle(e);
     },
-    [setTitle, setStartDate, setEndDate, setDescription, setLocation, toggle]
+    [setTitle, setDescription, setLocation]
   );
 
   const closeHandler = useCallback(
     e => {
+      setOpenState(false);
       if (calEvent && onCancel) onCancel(calEvent);
-      toggleHandler();
+      reset();
     },
-    [onCancel, calEvent, toggleHandler]
+    [onCancel, calEvent, reset]
   );
 
   const createHandler = useCallback(
     e => {
+      setOpenState(false);
       var newEvent = Object.assign({}, calEvent);
       newEvent = Object.assign(newEvent, {
         title: title,
@@ -223,7 +223,7 @@ const CalendarEventCreationModal = props => {
       });
 
       if (onCreate) onCreate(newEvent);
-      toggleHandler();
+      reset();
     },
     [
       calEvent,
@@ -233,181 +233,151 @@ const CalendarEventCreationModal = props => {
       location,
       startDate,
       endDate,
-      toggleHandler
+      reset
     ]
   );
 
   return (
-    <MDBModal
-      isOpen={isOpen}
-      toggle={toggle}
-      fullHeight
-      position="right"
-      animation="right"
-    >
-      <MDBModalBody>
-        <form className="mx-3 grey-text">
-          <MDBInput
-            label="Title"
-            group
-            type="text"
-            validate
-            error="wrong"
-            success="right"
-            name="title"
-            onInput={handleInput(setTitle)}
-          />
+    <Dialog open={openState} aria-labelledby="form-dialog-title" fullWidth>
+      <FormControl className={classes.formControl}>
+        <DialogContent>
+          <TextField fullWidth required autoFocus id="name" label="Title" />
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <MDBRow>
-              <MDBCol>
-                <DateTimePicker
-                  variant="inline"
-                  label="Start"
-                  value={startDate}
-                  onChange={date => setStartDate(date)}
-                />
-              </MDBCol>
-            </MDBRow>
-            <MDBRow>
-              <MDBCol>
-                <DateTimePicker
-                  variant="inline"
-                  label="End"
-                  value={endDate}
-                  onChange={date => setEndDate(date)}
-                />
-              </MDBCol>
-            </MDBRow>
+            <DateTimePicker
+              variant="inline"
+              label="Start"
+              value={startDate}
+              onChange={date => setStartDate(date)}
+            />
+            <DateTimePicker
+              variant="inline"
+              label="End"
+              value={endDate}
+              onChange={date => setEndDate(date)}
+            />
           </MuiPickersUtilsProvider>
+          <TextField fullWidth id="location" label="Location" />
+          <TextField fullWidth multiline id="description" label="Description" />
+        </DialogContent>
 
-          <MDBInput
-            label="Description"
-            group
-            type="textarea"
-            validate
-            rows="1"
-            error="wrong"
-            success="right"
-            name="description"
-            onInput={handleInput(setDescription)}
-          />
-          <MDBInput
-            label="Location"
-            group
-            type="text"
-            validate
-            error="wrong"
-            success="right"
-            name="location"
-            onInput={handleInput(setLocation)}
-          />
-        </form>
-      </MDBModalBody>
-      <MDBModalFooter>
-        <MDBBtn color="mdb-color" onMouseDown={createHandler}>
-          Create
-        </MDBBtn>
-        <MDBBtn color="mdb-color" outline onMouseDown={closeHandler}>
-          Close
-        </MDBBtn>
-      </MDBModalFooter>
-    </MDBModal>
+        <DialogActions>
+          <Button onClick={closeHandler} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={createHandler} color="primary">
+            Create
+          </Button>
+        </DialogActions>
+      </FormControl>
+    </Dialog>
   );
 };
 
 const CalendarEventPopover = props => {
-  const {
-    dateString,
-    hourString,
-    title,
-    owner,
-    description,
-    location,
-    onEdit,
-    onCopy,
-    onDelete,
-    onDismiss,
-    children
-  } = props;
+  const { open, calEvent } = props;
+
+  const useStyles = makeStyles(theme => ({
+    speedDial: {
+      position: "absolute",
+      "&.MuiSpeedDial-directionUp, &.MuiSpeedDial-directionLeft": {
+        bottom: theme.spacing(2),
+        right: theme.spacing(2)
+      },
+      "&.MuiSpeedDial-directionDown, &.MuiSpeedDial-directionRight": {
+        top: theme.spacing(2),
+        left: theme.spacing(2)
+      }
+    }
+  }));
+
+  const actions = [
+    { icon: <FileCopyIcon />, name: "Copy" },
+    { icon: <ShareIcon />, name: "Share" }
+  ];
+
+  const classes = useStyles();
+  const [openState, setOpenState] = useState(false);
+  const [speedDialOpen, setSpeedDialOpen] = useState(false);
+
+  const handleAction = action => e => {
+    switch (action.name) {
+      case "Copy":
+        console.log("Copy event");
+        break;
+      case "Share":
+        console.log("Share event");
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
-    loadCSS(
-      "https://use.fontawesome.com/releases/v5.1.0/css/all.css",
-      document.querySelector("#font-awesome-css")
-    );
-  }, []);
+    setOpenState(open);
+  }, [open]);
 
   return (
-    <MDBPopover popover clickable domElement>
-      {children}
-      <div>
-        <MDBPopoverHeader>
-          <MDBRow>
-            <MDBCol>
-              <span className="text">{title}</span>
-            </MDBCol>
-            <MDBCol>
-              <MDBBtnGroup>
-                <MDBBtn color="stylish-color lighten-2" size="sm">
-                  <MDBIcon icon="edit" className="mr-1" />
-                </MDBBtn>
-                <MDBBtn color="stylish-color lighten-2" size="sm">
-                  <MDBIcon icon="heart" />
-                </MDBBtn>
-                <MDBDropdown size="sm">
-                  <MDBDropdownToggle color="default">
-                    <MDBIcon icon="ellipsis-v" />
-                  </MDBDropdownToggle>
-                  <MDBDropdownMenu color="default" basic>
-                    <MDBDropdownItem>Duplicate</MDBDropdownItem>
-                    <MDBDropdownItem>Send</MDBDropdownItem>
-                  </MDBDropdownMenu>
-                </MDBDropdown>
-              </MDBBtnGroup>
-            </MDBCol>
-          </MDBRow>
-        </MDBPopoverHeader>
-        <MDBPopoverBody>
-          <MDBContainer>
-            <MDBRow>
-              <MDBCol md="1">
-                <MDBIcon far icon="clock" />
-              </MDBCol>
-              <MDBCol>
-                <strong>{hourString}</strong> {dateString}
-              </MDBCol>
-            </MDBRow>
-            <MDBRow>
-              <MDBCol md="1">
-                <MDBIcon far icon="user" />
-              </MDBCol>
-              <MDBCol>
-                <strong>{owner}</strong>
-              </MDBCol>
-            </MDBRow>
-            <MDBRow>
-              <MDBCol>
-                <p>{description}</p>
-              </MDBCol>
-            </MDBRow>
-            <MDBRow>
-              <MDBCol md="1">
-                <MDBIcon far icon="user" />
-              </MDBCol>
-              <MDBCol>
-                <p>{location}</p>
-              </MDBCol>
-            </MDBRow>
-          </MDBContainer>
-        </MDBPopoverBody>
-      </div>
-    </MDBPopover>
+    <Dialog open={openState} aria-labelledby="form-dialog-title">
+      <DialogTitle id="form-dialog-title">
+        <span className="text">{calEvent.title}</span>
+
+        <SpeedDial
+          ariaLabel="SpeedDial example"
+          className={classes.speedDial}
+          icon={<SpeedDialIcon />}
+          onClose={() => setSpeedDialOpen(false)}
+          onOpen={() => setSpeedDialOpen(true)}
+          open={speedDialOpen}
+          direction="down"
+        >
+          {actions.map(action => (
+            <SpeedDialAction
+              key={action.name}
+              icon={action.icon}
+              tooltipTitle={action.name}
+              onClick={e => handleAction(action)(e)}
+            />
+          ))}
+        </SpeedDial>
+      </DialogTitle>
+      <DialogContent>
+        <MuiPickersUtilsProvider utils={DateFnsUtils}>
+          <DateTimePicker
+            variant="inline"
+            label="Start"
+            value={calEvent.startDate}
+          />
+          <DateTimePicker
+            readOnly
+            variant="inline"
+            label="End"
+            value={calEvent.endDate}
+          />
+        </MuiPickersUtilsProvider>
+
+        <UserIcon />
+
+        <strong>{calEvent.owner}</strong>
+
+        <p>{calEvent.description}</p>
+
+        <UserIcon />
+
+        <p>{calEvent.location}</p>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setOpenState(false)} color="primary">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
 
 const CalendarEvent = props => {
   const {
     onHeightChangeStop,
+    onClick,
     overlayBounds,
     dayWidth,
     minuteHeight,
@@ -515,7 +485,8 @@ const CalendarEvent = props => {
         height: height + "px"
       }}
     >
-      <div
+      <Box
+        onClick={onClick}
         className={className}
         style={{
           position: "absolute",
@@ -523,36 +494,18 @@ const CalendarEvent = props => {
           top: position.y + "px"
         }}
       >
-        <CalendarEventPopover
-          id="popover-contained"
-          dateString={startDate.toDateString()}
-          hourString={hourString}
-          title={title}
-          owner={owner}
-          location={location}
-          description={description}
-          onEdit={onEdit}
-          onCopy={onCopy}
-          onDelete={onDelete}
-          onDismiss={false}
-        >
-          <div>
-            <BottomResizableContainer.Body>
-              <MDBContainer className={"calendar-event"}>
-                <MDBRow className="mx-2 mt-1">
-                  <span>
-                    <strong>{title}</strong>
-                  </span>
-                </MDBRow>
-                <MDBRow className="description-event mx-2">
-                  <p>{hourString}</p>
-                </MDBRow>
-              </MDBContainer>
-            </BottomResizableContainer.Body>
-          </div>
-        </CalendarEventPopover>
+        <BottomResizableContainer.Body>
+          <Grid container item direction="column">
+            <Box component="span" className="calendar-event">
+              <strong>{title}</strong>
+            </Box>
+            <Box className="description-event mx-2">
+              <p>{hourString}</p>
+            </Box>
+          </Grid>
+        </BottomResizableContainer.Body>
         <BottomResizableContainer.ResizeZone />
-      </div>
+      </Box>
     </BottomResizableContainer>
   );
 };
@@ -587,6 +540,7 @@ const CalendarEventsOverlay = ({
 
   const [localEvents, setLocalEvents] = useState(events);
   const [modalShow, setModalShow] = useState(false);
+  const [popoverShow, setPopoverShow] = useState(false);
   const [dimensions, setDimensions] = useState(getDimensions());
   const [selectedEvent, setSelectedEvent] = useState(false);
   const [overlayCreationMode, setOverlayCreationMode] = useState(false);
@@ -720,14 +674,11 @@ const CalendarEventsOverlay = ({
   /**
    * Modal CB functions
    */
-  const modalToggle = useCallback(
+  const eventCreationCancel = useCallback(
     e => {
-      if (modalShow) {
-        setSelectedEvent(false);
-      }
-      setModalShow(!modalShow);
+      setSelectedEvent(false);
     },
-    [modalShow, setModalShow]
+    [setSelectedEvent]
   );
 
   const eventCreationConfirm = useCallback(
@@ -735,9 +686,10 @@ const CalendarEventsOverlay = ({
       if (onEventCreation) {
         e.resizeOnCreation = false;
         onEventCreation(e);
+        setSelectedEvent(false);
       }
     },
-    [onEventCreation]
+    [onEventCreation, setSelectedEvent]
   );
 
   /**
@@ -752,6 +704,11 @@ const CalendarEventsOverlay = ({
     [overlayCreationMode, onEventUpdate]
   );
 
+  const eventClick = useCallback(e => {
+    setSelectedEvent(e);
+    setPopoverShow(true);
+  }, []);
+
   return (
     <InputOverlay
       onMouseDown={overlayEventCreationStart}
@@ -763,21 +720,24 @@ const CalendarEventsOverlay = ({
         minuteHeight={dimensions.minuteHeight}
       />
 
-      <CalendarEventCreationModal
-        isOpen={modalShow}
-        toggle={modalToggle}
+      <CalendarEventModal
+        open={modalShow}
         calEvent={selectedEvent}
         onCreate={eventCreationConfirm}
+        onCancel={eventCreationCancel}
       />
+
+      <CalendarEventPopover open={popoverShow} calEvent={selectedEvent} />
 
       {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
         <CalendarEvent
-          // Dimensions data
+          // Dimensions dataeventClick
           overlayBounds={dimensions.overlayBounds}
           dayWidth={dimensions.dayWidth}
           minuteHeight={dimensions.minuteHeight}
           // Event Callbacks
           onHeightChangeStop={() => eventHeightChangeStop(e)}
+          onClick={() => eventClick(e)}
           onEdit={false}
           onCopy={false}
           onDelete={false}
@@ -854,6 +814,14 @@ const Calendar = props => {
   const [selectedDay, setSelectedDay] = useState(getTodayDate());
   const [view, setView] = useState(viewEnum.DAY);
 
+  // Load FontAwesome if not already
+  useEffect(() => {
+    loadCSS(
+      "https://use.fontawesome.com/releases/v5.1.0/css/all.css",
+      document.querySelector("#font-awesome-css")
+    );
+  }, []);
+
   // TODO: Does not re-render the events in GUI
   const createEvent = useCallback(
     newEvent => {
@@ -893,8 +861,11 @@ const Calendar = props => {
   );
 
   return (
-    <MDBContainer>
+    <Grid container>
+      {/** Controls header */}
       <CalendarHeader changeView={setView} />
+
+      {/** View mode selector */}
       {view === viewEnum.DAY && (
         <CalendarDayView
           day={selectedDay}
@@ -904,7 +875,7 @@ const Calendar = props => {
           cancelEvent={cancelEvent}
         />
       )}
-    </MDBContainer>
+    </Grid>
   );
 };
 
@@ -912,7 +883,7 @@ const CalendarHeader = props => {
   /**
    * TODO
    */
-  return <div />;
+  return <Grid container item />;
 };
 
 /**
@@ -944,10 +915,10 @@ const CalendarDayView = props => {
   }, [day, events]);
 
   return (
-    <MDBContainer>
+    <Grid container item direction="column">
       <CalendarWeekHeader day={day} onClickCallBack={switchDayHandler} />
       <CalendarDayBody events={filteredEvents} day={day} {...other} />
-    </MDBContainer>
+    </Grid>
   );
 };
 
@@ -968,15 +939,10 @@ const CalendarDayBody = props => {
       {...other}
       setRowReference={r => (rowRef.current = r)}
     >
-      <MDBCol className="body-main-col">
-        <MDBContainer className="cell-columns">
-          <MDBRow>
-            <CalendarDayCol
-              setColReference={r => (colRef.current = r)}
-              dayOfWeek={day}
-            />
-          </MDBRow>
-        </MDBContainer>
+      <CalendarDayCol
+        setColReference={r => (colRef.current = r)}
+        dayOfWeek={day}
+      >
         <CalendarEventsOverlay
           events={events}
           onEventCreation={createEvent}
@@ -985,7 +951,7 @@ const CalendarDayBody = props => {
           rowRef={rowRef}
           colRef={colRef}
         />
-      </MDBCol>
+      </CalendarDayCol>
     </CalendarDayHeaderCol>
   );
 };
