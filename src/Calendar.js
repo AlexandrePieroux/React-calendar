@@ -1,3 +1,5 @@
+import "typeface-roboto";
+
 import { loadCSS } from "fg-loadcss";
 import DateFnsUtils from "@date-io/date-fns";
 
@@ -10,10 +12,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl
+  FormControl,
+  Typography
 } from "@material-ui/core";
 import { SpeedDial, SpeedDialIcon, SpeedDialAction } from "@material-ui/lab";
-import { FileCopyIcon, ShareIcon, UserIcon } from "@material-ui/icons";
+import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import { makeStyles } from "@material-ui/core/styles";
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 
@@ -87,7 +90,7 @@ const CalendarWeekHeader = ({ day, onClickCallBack }) => (
       <Box component="span">{getTimezoneStringShort()}</Box>
     </Grid>
     <Grid item className="header-offset border-cell">
-      <Box>&nbsp;</Box>
+      &nbsp;
     </Grid>
 
     {/** Day cells */}
@@ -241,23 +244,43 @@ const CalendarEventModal = props => {
     <Dialog open={openState} aria-labelledby="form-dialog-title" fullWidth>
       <FormControl className={classes.formControl}>
         <DialogContent>
-          <TextField fullWidth required autoFocus id="name" label="Title" />
+          <TextField
+            fullWidth
+            required
+            autoFocus
+            id="name"
+            label="Title"
+            onChange={e => setTitle(e.target.value)}
+          />
           <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <DateTimePicker
-              variant="inline"
-              label="Start"
-              value={startDate}
-              onChange={date => setStartDate(date)}
-            />
-            <DateTimePicker
-              variant="inline"
-              label="End"
-              value={endDate}
-              onChange={date => setEndDate(date)}
-            />
+            <>
+              <DateTimePicker
+                variant="inline"
+                label="Start"
+                value={startDate}
+                onChange={date => setStartDate(date)}
+              />{" "}
+              <DateTimePicker
+                variant="inline"
+                label="End"
+                value={endDate}
+                onChange={date => setEndDate(date)}
+              />
+            </>
           </MuiPickersUtilsProvider>
-          <TextField fullWidth id="location" label="Location" />
-          <TextField fullWidth multiline id="description" label="Description" />
+          <TextField
+            fullWidth
+            id="location"
+            label="Location"
+            onChange={e => setLocation(e.target.value)}
+          />
+          <TextField
+            fullWidth
+            multiline
+            id="description"
+            label="Description"
+            onChange={e => setDescription(e.target.value)}
+          />
         </DialogContent>
 
         <DialogActions>
@@ -290,10 +313,7 @@ const CalendarEventPopover = props => {
     }
   }));
 
-  const actions = [
-    { icon: <FileCopyIcon />, name: "Copy" },
-    { icon: <ShareIcon />, name: "Share" }
-  ];
+  const actions = [{ name: "Copy" }, { name: "Share" }];
 
   const classes = useStyles();
   const [openState, setOpenState] = useState(false);
@@ -342,26 +362,23 @@ const CalendarEventPopover = props => {
       </DialogTitle>
       <DialogContent>
         <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <DateTimePicker
-            variant="inline"
-            label="Start"
-            value={calEvent.startDate}
-          />
-          <DateTimePicker
-            readOnly
-            variant="inline"
-            label="End"
-            value={calEvent.endDate}
-          />
+          <>
+            <DateTimePicker
+              variant="inline"
+              label="Start"
+              value={calEvent.startDate}
+            />
+            <DateTimePicker
+              variant="inline"
+              label="End"
+              value={calEvent.endDate}
+            />
+          </>
         </MuiPickersUtilsProvider>
-
-        <UserIcon />
 
         <strong>{calEvent.owner}</strong>
 
         <p>{calEvent.description}</p>
-
-        <UserIcon />
 
         <p>{calEvent.location}</p>
       </DialogContent>
@@ -495,13 +512,19 @@ const CalendarEvent = props => {
         }}
       >
         <BottomResizableContainer.Body>
-          <Grid container item direction="column">
-            <Box component="span" className="calendar-event">
-              <strong>{title}</strong>
-            </Box>
-            <Box className="description-event mx-2">
-              <p>{hourString}</p>
-            </Box>
+          <Grid container item direction="column" className="calendar-event">
+            <Typography variant="subtitle2" component="h2">
+              {title}
+            </Typography>
+            <Typography variant="body2" component="p">
+              {hourString}
+            </Typography>
+            <Typography variant="body2" component="p">
+              {location}
+            </Typography>
+            <Typography variant="body1" component="p">
+              <AccountCircleIcon /> {owner}
+            </Typography>
           </Grid>
         </BottomResizableContainer.Body>
         <BottomResizableContainer.ResizeZone />
@@ -677,6 +700,7 @@ const CalendarEventsOverlay = ({
   const eventCreationCancel = useCallback(
     e => {
       setSelectedEvent(false);
+      setModalShow(false);
     },
     [setSelectedEvent]
   );
@@ -687,6 +711,7 @@ const CalendarEventsOverlay = ({
         e.resizeOnCreation = false;
         onEventCreation(e);
         setSelectedEvent(false);
+        setModalShow(false);
       }
     },
     [onEventCreation, setSelectedEvent]
@@ -822,7 +847,6 @@ const Calendar = props => {
     );
   }, []);
 
-  // TODO: Does not re-render the events in GUI
   const createEvent = useCallback(
     newEvent => {
       setEvents([newEvent, ...events]);
