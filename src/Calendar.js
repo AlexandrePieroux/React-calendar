@@ -13,11 +13,14 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  Typography
+  Typography,
+  IconButton,
+  Menu,
+  MenuItem
 } from "@material-ui/core";
-import { SpeedDial, SpeedDialIcon, SpeedDialAction } from "@material-ui/lab";
-import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import { makeStyles } from "@material-ui/core/styles";
+import AccountCircleIcon from "@material-ui/icons/AccountCircle";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 
 import React, {
@@ -297,78 +300,82 @@ const CalendarEventModal = props => {
 };
 
 const CalendarEventPopover = props => {
-  const { open, calEvent } = props;
+  const options = ["Copy", "Share", "Send"];
 
-  const useStyles = makeStyles(theme => ({
-    speedDial: {
-      position: "absolute",
-      "&.MuiSpeedDial-directionUp, &.MuiSpeedDial-directionLeft": {
-        bottom: theme.spacing(2),
-        right: theme.spacing(2)
-      },
-      "&.MuiSpeedDial-directionDown, &.MuiSpeedDial-directionRight": {
-        top: theme.spacing(2),
-        left: theme.spacing(2)
-      }
-    }
-  }));
+  const { open, calEvent, onClose } = props;
 
-  const actions = [{ name: "Copy" }, { name: "Share" }];
-
-  const classes = useStyles();
   const [openState, setOpenState] = useState(false);
-  const [speedDialOpen, setSpeedDialOpen] = useState(false);
-
-  const handleAction = action => e => {
-    switch (action.name) {
-      case "Copy":
-        console.log("Copy event");
-        break;
-      case "Share":
-        console.log("Share event");
-        break;
-      default:
-        break;
-    }
-  };
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const menuOpenState = Boolean(anchorEl);
 
   useEffect(() => {
     setOpenState(open);
   }, [open]);
 
-  return (
-    <Dialog open={openState} aria-labelledby="form-dialog-title">
-      <DialogTitle id="form-dialog-title">
-        <span className="text">{calEvent.title}</span>
+  const onCloseHandler = useCallback(
+    e => {
+      if (onClose) onClose(e);
+    },
+    [onClose]
+  );
 
-        <SpeedDial
-          ariaLabel="SpeedDial example"
-          className={classes.speedDial}
-          icon={<SpeedDialIcon />}
-          onClose={() => setSpeedDialOpen(false)}
-          onOpen={() => setSpeedDialOpen(true)}
-          open={speedDialOpen}
-          direction="down"
-        >
-          {actions.map(action => (
-            <SpeedDialAction
-              key={action.name}
-              icon={action.icon}
-              tooltipTitle={action.name}
-              onClick={e => handleAction(action)(e)}
-            />
-          ))}
-        </SpeedDial>
+  const handleClick = event => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  return (
+    <Dialog
+      open={openState}
+      onClose={onCloseHandler}
+      aria-labelledby="form-dialog-title"
+    >
+      <DialogTitle id="form-dialog-title">
+        <Grid container>
+          <Typography type="title" style={{ flex: 1 }}>
+            {calEvent.title}
+          </Typography>
+          <IconButton
+            aria-label="more"
+            aria-controls="long-menu"
+            aria-haspopup="true"
+            onClick={handleClick}
+          >
+            <MoreVertIcon />
+          </IconButton>
+          <Menu
+            id="long-menu"
+            anchorEl={anchorEl}
+            keepMounted
+            open={menuOpenState}
+            onClose={handleMenuClose}
+          >
+            {options.map(option => (
+              <MenuItem
+                key={option}
+                selected={option === "Copy"}
+                onClick={handleMenuClose}
+              >
+                {option}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Grid>
       </DialogTitle>
       <DialogContent>
         <MuiPickersUtilsProvider utils={DateFnsUtils}>
           <>
             <DateTimePicker
+              readOnly
               variant="inline"
               label="Start"
               value={calEvent.startDate}
             />
             <DateTimePicker
+              readOnly
               variant="inline"
               label="End"
               value={calEvent.endDate}
@@ -383,7 +390,7 @@ const CalendarEventPopover = props => {
         <p>{calEvent.location}</p>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpenState(false)} color="primary">
+        <Button onClick={onCloseHandler} color="primary">
           Close
         </Button>
       </DialogActions>
@@ -512,9 +519,16 @@ const CalendarEvent = props => {
         }}
       >
         <BottomResizableContainer.Body>
-          <Grid container item direction="column" className="calendar-event">
+          <Grid
+            container
+            item
+            direction="column"
+            justify="flex-start"
+            alignItems="flex-start"
+            className="calendar-event"
+          >
             <Typography variant="subtitle2" component="h2">
-              {title}
+              {title || "(New Title)"}
             </Typography>
             <Typography variant="body2" component="p">
               {hourString}
@@ -522,9 +536,16 @@ const CalendarEvent = props => {
             <Typography variant="body2" component="p">
               {location}
             </Typography>
-            <Typography variant="body1" component="p">
-              <AccountCircleIcon /> {owner}
-            </Typography>
+            <Grid container item direction="row" alignItems="center">
+              <Box>
+                <AccountCircleIcon />
+              </Box>
+              <Box>
+                <Typography variant="body1" component="p">
+                  {owner}
+                </Typography>
+              </Box>
+            </Grid>
           </Grid>
         </BottomResizableContainer.Body>
         <BottomResizableContainer.ResizeZone />
@@ -565,6 +586,7 @@ const CalendarEventsOverlay = ({
   const [modalShow, setModalShow] = useState(false);
   const [popoverShow, setPopoverShow] = useState(false);
   const [dimensions, setDimensions] = useState(getDimensions());
+  const [eventInCreation, setEventInCreation] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(false);
   const [overlayCreationMode, setOverlayCreationMode] = useState(false);
 
@@ -684,9 +706,9 @@ const CalendarEventsOverlay = ({
     e => {
       if (modalShow) return;
       setOverlayCreationMode(true);
-      setSelectedEvent(createEvent(e));
+      setEventInCreation(createEvent(e));
     },
-    [modalShow, setSelectedEvent, createEvent]
+    [modalShow, setEventInCreation, createEvent]
   );
 
   const overlayEventCreationStop = useCallback(e => {
@@ -699,10 +721,10 @@ const CalendarEventsOverlay = ({
    */
   const eventCreationCancel = useCallback(
     e => {
-      setSelectedEvent(false);
+      setEventInCreation(false);
       setModalShow(false);
     },
-    [setSelectedEvent]
+    [setEventInCreation]
   );
 
   const eventCreationConfirm = useCallback(
@@ -710,11 +732,11 @@ const CalendarEventsOverlay = ({
       if (onEventCreation) {
         e.resizeOnCreation = false;
         onEventCreation(e);
-        setSelectedEvent(false);
+        setEventInCreation(false);
         setModalShow(false);
       }
     },
-    [onEventCreation, setSelectedEvent]
+    [onEventCreation, setEventInCreation]
   );
 
   /**
@@ -734,6 +756,11 @@ const CalendarEventsOverlay = ({
     setPopoverShow(true);
   }, []);
 
+  const onPopoverClose = useCallback(e => {
+    setSelectedEvent(false);
+    setPopoverShow(false);
+  }, []);
+
   return (
     <InputOverlay
       onMouseDown={overlayEventCreationStart}
@@ -747,39 +774,45 @@ const CalendarEventsOverlay = ({
 
       <CalendarEventModal
         open={modalShow}
-        calEvent={selectedEvent}
+        calEvent={eventInCreation}
         onCreate={eventCreationConfirm}
         onCancel={eventCreationCancel}
       />
 
-      <CalendarEventPopover open={popoverShow} calEvent={selectedEvent} />
+      <CalendarEventPopover
+        open={popoverShow}
+        calEvent={selectedEvent}
+        onClose={onPopoverClose}
+      />
 
-      {[...(selectedEvent ? [selectedEvent] : []), ...localEvents].map(e => (
-        <CalendarEvent
-          // Dimensions dataeventClick
-          overlayBounds={dimensions.overlayBounds}
-          dayWidth={dimensions.dayWidth}
-          minuteHeight={dimensions.minuteHeight}
-          // Event Callbacks
-          onHeightChangeStop={() => eventHeightChangeStop(e)}
-          onClick={() => eventClick(e)}
-          onEdit={false}
-          onCopy={false}
-          onDelete={false}
-          // Event data
-          resizeOnCreation={e.resizeOnCreation}
-          startDate={e.startDate}
-          endDate={e.endDate}
-          setEndDate={date => (e.endDate = date)}
-          description={e.description}
-          owner={"Admin"}
-          location={e.location}
-          // Props
-          title={e.title}
-          // Others
-          key={e.renderKey || e.id}
-        />
-      ))}
+      {[...(eventInCreation ? [eventInCreation] : []), ...localEvents].map(
+        e => (
+          <CalendarEvent
+            // Dimensions dataeventClick
+            overlayBounds={dimensions.overlayBounds}
+            dayWidth={dimensions.dayWidth}
+            minuteHeight={dimensions.minuteHeight}
+            // Event Callbacks
+            onHeightChangeStop={() => eventHeightChangeStop(e)}
+            onClick={() => eventClick(e)}
+            onEdit={false}
+            onCopy={false}
+            onDelete={false}
+            // Event data
+            resizeOnCreation={e.resizeOnCreation}
+            startDate={e.startDate}
+            endDate={e.endDate}
+            setEndDate={date => (e.endDate = date)}
+            description={e.description}
+            owner={"Admin"}
+            location={e.location}
+            // Props
+            title={e.title}
+            // Others
+            key={e.renderKey || e.id}
+          />
+        )
+      )}
     </InputOverlay>
   );
 };
