@@ -338,12 +338,11 @@ const popOverStyle = makeStyles(theme => ({
     margin: theme.spacing(1)
   }
 }));
+const popOverMoreMenuOptions = ["Copy", "Share", "Send"];
 const CalendarEventPopover = props => {
   const useStyles = popOverStyle();
 
-  const options = ["Copy", "Share", "Send"];
-
-  const { open, calEvent, onClose } = props;
+  const { open, calEvent, onClose, onEdit, onDelete } = props;
 
   const [openState, setOpenState] = useState(false);
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -368,6 +367,25 @@ const CalendarEventPopover = props => {
     setAnchorEl(null);
   };
 
+  const handleMenuAction = event => {
+    switch (event.currentTarget) {
+      case "Copy":
+        console.log("Popover more menu -> Copy");
+        handleMenuClose();
+        break;
+      case "Share":
+        console.log("Popover more menu -> Share");
+        handleMenuClose();
+        break;
+      case "Send":
+        console.log("Popover more menu -> Send");
+        handleMenuClose();
+        break;
+      default:
+        return;
+    }
+  };
+
   return (
     <Dialog
       open={openState}
@@ -384,6 +402,7 @@ const CalendarEventPopover = props => {
             aria-label="delete"
             className={useStyles.margin}
             size="small"
+            onClick={onEdit}
           >
             <EditIcon fontSize="inherit" />
           </IconButton>
@@ -391,6 +410,7 @@ const CalendarEventPopover = props => {
             aria-label="delete"
             className={useStyles.margin}
             size="small"
+            onClick={onDelete}
           >
             <DeleteIcon fontSize="inherit" />
           </IconButton>
@@ -410,11 +430,11 @@ const CalendarEventPopover = props => {
             open={menuOpenState}
             onClose={handleMenuClose}
           >
-            {options.map(option => (
+            {popOverMoreMenuOptions.map(option => (
               <MenuItem
                 key={option}
                 selected={option === "Copy"}
-                onClick={handleMenuClose}
+                onClick={handleMenuAction}
               >
                 {option}
               </MenuItem>
@@ -842,9 +862,21 @@ const CalendarEventsOverlay = ({
   }, []);
 
   const onPopoverClose = useCallback(e => {
-    setSelectedEvent(false);
     setPopoverShow(false);
   }, []);
+
+  const onPopoverEventEdit = useCallback(e => {
+    setPopoverShow(false);
+    setModalShow(true);
+  }, []);
+
+  const onPopoverEventDelete = useCallback(
+    e => {
+      setPopoverShow(false);
+      onEventDelete(selectedEvent);
+    },
+    [onEventDelete, selectedEvent]
+  );
 
   return (
     <InputOverlay
@@ -868,6 +900,8 @@ const CalendarEventsOverlay = ({
         open={popoverShow}
         calEvent={selectedEvent}
         onClose={onPopoverClose}
+        onEdit={onPopoverEventEdit}
+        onDelete={onPopoverEventDelete}
       />
 
       {[...(eventInCreation ? [eventInCreation] : []), ...localEvents].map(
