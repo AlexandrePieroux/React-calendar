@@ -21,6 +21,8 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
+import EditIcon from "@material-ui/icons/Edit";
+import DeleteIcon from "@material-ui/icons/Delete";
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 
 import React, {
@@ -221,7 +223,7 @@ const CalendarEventModal = props => {
       setOpenState(false);
       var newEvent = Object.assign({}, calEvent);
       newEvent = Object.assign(newEvent, {
-        title: title,
+        title: title || "(No Title)",
         description: description,
         location: location,
         startDate: new Date(startDate),
@@ -300,6 +302,12 @@ const CalendarEventModal = props => {
 };
 
 const CalendarEventPopover = props => {
+  const useStyles = makeStyles(theme => ({
+    margin: {
+      margin: theme.spacing(1)
+    }
+  }));
+
   const options = ["Copy", "Share", "Send"];
 
   const { open, calEvent, onClose } = props;
@@ -334,17 +342,32 @@ const CalendarEventPopover = props => {
       aria-labelledby="form-dialog-title"
     >
       <DialogTitle id="form-dialog-title">
-        <Grid container>
-          <Typography type="title" style={{ flex: 1 }}>
+        <Grid container direction="row" justify="flex-end" alignItems="center">
+          <Typography variant="h5" gutterBottom style={{ flex: 1 }}>
             {calEvent.title}
           </Typography>
+          <IconButton
+            aria-label="delete"
+            className={useStyles().margin}
+            size="small"
+          >
+            <EditIcon fontSize="inherit" />
+          </IconButton>
+          <IconButton
+            aria-label="delete"
+            className={useStyles().margin}
+            size="small"
+          >
+            <DeleteIcon fontSize="inherit" />
+          </IconButton>
           <IconButton
             aria-label="more"
             aria-controls="long-menu"
             aria-haspopup="true"
             onClick={handleClick}
+            size="small"
           >
-            <MoreVertIcon />
+            <MoreVertIcon fontSize="inherit" />
           </IconButton>
           <Menu
             id="long-menu"
@@ -373,12 +396,14 @@ const CalendarEventPopover = props => {
               variant="inline"
               label="Start"
               value={calEvent.startDate}
-            />
+              inputProps={{ "aria-label": "naked" }}
+            />{" "}
             <DateTimePicker
               readOnly
               variant="inline"
               label="End"
               value={calEvent.endDate}
+              inputProps={{ "aria-label": "naked" }}
             />
           </>
         </MuiPickersUtilsProvider>
