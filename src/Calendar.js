@@ -23,6 +23,9 @@ import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
+import EventIcon from "@material-ui/icons/Event";
+import LocationOnIcon from "@material-ui/icons/LocationOn";
+import DescriptionIcon from "@material-ui/icons/Description";
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 
 import React, {
@@ -170,20 +173,16 @@ const CalendarDayCol = ({ dayOfWeek, setColReference, children }) => (
   </Grid>
 );
 
+const modalStyle = makeStyles(theme => ({
+  formControl: {
+    marginTop: theme.spacing(2),
+    minWidth: 120
+  }
+}));
 const CalendarEventModal = props => {
   const { open, calEvent, onCreate, onCancel } = props;
 
-  const useStyles = makeStyles(theme => ({
-    formControl: {
-      marginTop: theme.spacing(2),
-      minWidth: 120
-    },
-    formControlLabel: {
-      marginTop: theme.spacing(1)
-    }
-  }));
-
-  const classes = useStyles();
+  const classes = modalStyle();
   const [openState, setOpenState] = useState(false);
   const [title, setTitle] = useState("");
   const [startDate, setStartDate] = useState();
@@ -248,44 +247,77 @@ const CalendarEventModal = props => {
   return (
     <Dialog open={openState} aria-labelledby="form-dialog-title" fullWidth>
       <FormControl className={classes.formControl}>
-        <DialogContent>
-          <TextField
-            fullWidth
-            required
-            autoFocus
-            id="name"
-            label="Title"
-            onChange={e => setTitle(e.target.value)}
-          />
-          <MuiPickersUtilsProvider utils={DateFnsUtils}>
-            <>
-              <DateTimePicker
-                variant="inline"
-                label="Start"
-                value={startDate}
-                onChange={date => setStartDate(date)}
-              />{" "}
-              <DateTimePicker
-                variant="inline"
-                label="End"
-                value={endDate}
-                onChange={date => setEndDate(date)}
+        <DialogTitle>
+          <Grid container spacing={4} alignItems="flex-end">
+            <Grid item>&nbsp;</Grid>
+            <Grid item>
+              <TextField
+                fullWidth
+                required
+                autoFocus
+                id="name"
+                placeholder="Title"
+                onChange={e => setTitle(e.target.value)}
+                inputProps={{
+                  style: { fontSize: 25 },
+                  "aria-label": "description"
+                }}
+                InputLabelProps={{ style: { fontSize: 25 } }}
               />
-            </>
+            </Grid>
+          </Grid>
+        </DialogTitle>
+        <DialogContent>
+          <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <Grid container spacing={2} alignItems="flex-end">
+              <Grid item>
+                <EventIcon />
+              </Grid>
+              <Grid item>
+                <>
+                  <DateTimePicker
+                    variant="inline"
+                    label="Start"
+                    value={startDate}
+                    onChange={date => setStartDate(date)}
+                  />{" "}
+                  <DateTimePicker
+                    variant="inline"
+                    label="End"
+                    value={endDate}
+                    onChange={date => setEndDate(date)}
+                  />
+                </>
+              </Grid>
+            </Grid>
           </MuiPickersUtilsProvider>
-          <TextField
-            fullWidth
-            id="location"
-            label="Location"
-            onChange={e => setLocation(e.target.value)}
-          />
-          <TextField
-            fullWidth
-            multiline
-            id="description"
-            label="Description"
-            onChange={e => setDescription(e.target.value)}
-          />
+          <Grid container spacing={2} alignItems="flex-end">
+            <Grid item>
+              <LocationOnIcon />
+            </Grid>
+            <Grid item>
+              <TextField
+                fullWidth
+                id="location"
+                label="Location"
+                onChange={e => setLocation(e.target.value)}
+              />
+            </Grid>
+          </Grid>
+          <Grid container spacing={2} alignItems="flex-end">
+            <Grid item>
+              <DescriptionIcon />
+            </Grid>
+            <Grid item>
+              <TextField
+                fullWidth
+                multiline
+                id="description"
+                label="Description"
+                onChange={e => setDescription(e.target.value)}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
 
         <DialogActions>
@@ -301,12 +333,13 @@ const CalendarEventModal = props => {
   );
 };
 
+const popOverStyle = makeStyles(theme => ({
+  margin: {
+    margin: theme.spacing(1)
+  }
+}));
 const CalendarEventPopover = props => {
-  const useStyles = makeStyles(theme => ({
-    margin: {
-      margin: theme.spacing(1)
-    }
-  }));
+  const useStyles = popOverStyle();
 
   const options = ["Copy", "Share", "Send"];
 
@@ -340,6 +373,7 @@ const CalendarEventPopover = props => {
       open={openState}
       onClose={onCloseHandler}
       aria-labelledby="form-dialog-title"
+      hideBackdrop
     >
       <DialogTitle id="form-dialog-title">
         <Grid container direction="row" justify="flex-end" alignItems="center">
@@ -348,14 +382,14 @@ const CalendarEventPopover = props => {
           </Typography>
           <IconButton
             aria-label="delete"
-            className={useStyles().margin}
+            className={useStyles.margin}
             size="small"
           >
             <EditIcon fontSize="inherit" />
           </IconButton>
           <IconButton
             aria-label="delete"
-            className={useStyles().margin}
+            className={useStyles.margin}
             size="small"
           >
             <DeleteIcon fontSize="inherit" />
@@ -390,29 +424,54 @@ const CalendarEventPopover = props => {
       </DialogTitle>
       <DialogContent>
         <MuiPickersUtilsProvider utils={DateFnsUtils}>
-          <>
-            <DateTimePicker
-              readOnly
-              variant="inline"
-              label="Start"
-              value={calEvent.startDate}
-              inputProps={{ "aria-label": "naked" }}
-            />{" "}
-            <DateTimePicker
-              readOnly
-              variant="inline"
-              label="End"
-              value={calEvent.endDate}
-              inputProps={{ "aria-label": "naked" }}
-            />
-          </>
+          <Grid container spacing={2} alignItems="flex-end">
+            <Grid item>
+              <EventIcon />
+            </Grid>
+            <Grid item>
+              <>
+                <DateTimePicker
+                  readOnly
+                  variant="inline"
+                  label="Start"
+                  value={calEvent.startDate}
+                  inputProps={{ "aria-label": "naked" }}
+                />{" "}
+                <DateTimePicker
+                  readOnly
+                  variant="inline"
+                  label="End"
+                  value={calEvent.endDate}
+                  inputProps={{ "aria-label": "naked" }}
+                />
+              </>
+            </Grid>
+          </Grid>
         </MuiPickersUtilsProvider>
-
-        <strong>{calEvent.owner}</strong>
-
-        <p>{calEvent.description}</p>
-
-        <p>{calEvent.location}</p>
+        <Grid container spacing={2} alignItems="flex-end">
+          <Grid item>
+            <AccountCircleIcon />
+          </Grid>
+          <Grid item>
+            <Typography variant="h6">{calEvent.owner}</Typography>
+          </Grid>
+        </Grid>
+        <Grid container spacing={2} alignItems="flex-end">
+          <Grid item>
+            <DescriptionIcon />
+          </Grid>
+          <Grid item>
+            <Typography variant="body1">{calEvent.description}</Typography>
+          </Grid>
+        </Grid>
+        <Grid container spacing={2} alignItems="flex-end">
+          <Grid item>
+            <LocationOnIcon />
+          </Grid>
+          <Grid item>
+            <Typography variant="body1">{calEvent.location}</Typography>
+          </Grid>
+        </Grid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onCloseHandler} color="primary">
@@ -633,7 +692,8 @@ const CalendarEventsOverlay = ({
       endDate: eventEnd,
       title: "",
       description: "",
-      location: ""
+      location: "",
+      owner: "Admin" // TODO: fixme
     };
 
     return eventData;
@@ -829,7 +889,7 @@ const CalendarEventsOverlay = ({
             endDate={e.endDate}
             setEndDate={date => (e.endDate = date)}
             description={e.description}
-            owner={"Admin"}
+            owner={e.owner}
             location={e.location}
             // Props
             title={e.title}
