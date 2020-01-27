@@ -180,13 +180,13 @@ const modalStyle = makeStyles(theme => ({
   }
 }));
 const CalendarEventModal = props => {
-  const { open, calEvent, onCreate, onCancel } = props;
+  const { open, editMode, calEvent, onCreate, onCancel, onEdit } = props;
 
   const classes = modalStyle();
   const [openState, setOpenState] = useState(false);
   const [title, setTitle] = useState("");
-  const [startDate, setStartDate] = useState();
-  const [endDate, setEndDate] = useState();
+  const [startDate, setStartDate] = useState(false);
+  const [endDate, setEndDate] = useState(false);
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
 
@@ -217,8 +217,8 @@ const CalendarEventModal = props => {
     [onCancel, calEvent, reset]
   );
 
-  const createHandler = useCallback(
-    e => {
+  const actionHandler = useCallback(
+    action => e => {
       setOpenState(false);
       var newEvent = Object.assign({}, calEvent);
       newEvent = Object.assign(newEvent, {
@@ -229,19 +229,10 @@ const CalendarEventModal = props => {
         endDate: new Date(endDate)
       });
 
-      if (onCreate) onCreate(newEvent);
+      if (action) action(newEvent);
       reset();
     },
-    [
-      calEvent,
-      onCreate,
-      title,
-      description,
-      location,
-      startDate,
-      endDate,
-      reset
-    ]
+    [calEvent, title, description, location, startDate, endDate, reset]
   );
 
   return (
@@ -257,6 +248,7 @@ const CalendarEventModal = props => {
                 autoFocus
                 id="name"
                 placeholder="Title"
+                defaultValue={calEvent.title}
                 onChange={e => setTitle(e.target.value)}
                 inputProps={{
                   style: { fontSize: 25 },
@@ -300,6 +292,7 @@ const CalendarEventModal = props => {
                 fullWidth
                 id="location"
                 label="Location"
+                defaultValue={calEvent.location}
                 onChange={e => setLocation(e.target.value)}
               />
             </Grid>
@@ -314,6 +307,7 @@ const CalendarEventModal = props => {
                 multiline
                 id="description"
                 label="Description"
+                defaultValue={calEvent.description}
                 onChange={e => setDescription(e.target.value)}
               />
             </Grid>
@@ -324,9 +318,15 @@ const CalendarEventModal = props => {
           <Button onClick={closeHandler} color="primary">
             Cancel
           </Button>
-          <Button onClick={createHandler} color="primary">
-            Create
-          </Button>
+          {(!editMode && (
+            <Button onClick={actionHandler(onCreate)} color="primary">
+              Create
+            </Button>
+          )) || (
+            <Button onClick={actionHandler(onEdit)} color="primary">
+              Update
+            </Button>
+          )}
         </DialogActions>
       </FormControl>
     </Dialog>
@@ -690,9 +690,9 @@ const CalendarEventsOverlay = ({
   const [modalShow, setModalShow] = useState(false);
   const [popoverShow, setPopoverShow] = useState(false);
   const [dimensions, setDimensions] = useState(getDimensions());
-  const [eventInCreation, setEventInCreation] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(false);
   const [overlayCreationMode, setOverlayCreationMode] = useState(false);
+  const [editMode, setEditMode] = useState(false);
 
   /**
    * Utilites functions
@@ -811,9 +811,10 @@ const CalendarEventsOverlay = ({
     e => {
       if (modalShow) return;
       setOverlayCreationMode(true);
-      setEventInCreation(createEvent(e));
+      setEditMode(false);
+      setSelectedEvent(createEvent(e));
     },
-    [modalShow, setEventInCreation, createEvent]
+    [modalShow, setSelectedEvent, createEvent]
   );
 
   const overlayEventCreationStop = useCallback(e => {
@@ -826,10 +827,10 @@ const CalendarEventsOverlay = ({
    */
   const eventCreationCancel = useCallback(
     e => {
-      setEventInCreation(false);
+      setSelectedEvent(false);
       setModalShow(false);
     },
-    [setEventInCreation]
+    [setSelectedEvent]
   );
 
   const eventCreationConfirm = useCallback(
@@ -837,11 +838,22 @@ const CalendarEventsOverlay = ({
       if (onEventCreation) {
         e.resizeOnCreation = false;
         onEventCreation(e);
-        setEventInCreation(false);
+        setSelectedEvent(false);
         setModalShow(false);
       }
     },
-    [onEventCreation, setEventInCreation]
+    [onEventCreation, setSelectedEvent]
+  );
+
+  const eventEditConfirm = useCallback(
+    e => {
+      if (onEventUpdate) {
+        onEventUpdate(e);
+        setModalShow(e);
+        setEditMode(false);
+      }
+    },
+    [onEventUpdate]
   );
 
   /**
@@ -858,6 +870,7 @@ const CalendarEventsOverlay = ({
 
   const eventClick = useCallback(e => {
     setSelectedEvent(e);
+    setEditMode(true);
     setPopoverShow(true);
   }, []);
 
@@ -867,6 +880,7 @@ const CalendarEventsOverlay = ({
 
   const onPopoverEventEdit = useCallback(e => {
     setPopoverShow(false);
+    setEditMode(true);
     setModalShow(true);
   }, []);
 
@@ -891,8 +905,10 @@ const CalendarEventsOverlay = ({
 
       <CalendarEventModal
         open={modalShow}
-        calEvent={eventInCreation}
+        editMode={editMode}
+        calEvent={selectedEvent}
         onCreate={eventCreationConfirm}
+        onEdit={eventEditConfirm}
         onCancel={eventCreationCancel}
       />
 
@@ -904,34 +920,35 @@ const CalendarEventsOverlay = ({
         onDelete={onPopoverEventDelete}
       />
 
-      {[...(eventInCreation ? [eventInCreation] : []), ...localEvents].map(
-        e => (
-          <CalendarEvent
-            // Dimensions dataeventClick
-            overlayBounds={dimensions.overlayBounds}
-            dayWidth={dimensions.dayWidth}
-            minuteHeight={dimensions.minuteHeight}
-            // Event Callbacks
-            onHeightChangeStop={() => eventHeightChangeStop(e)}
-            onClick={() => eventClick(e)}
-            onEdit={false}
-            onCopy={false}
-            onDelete={false}
-            // Event data
-            resizeOnCreation={e.resizeOnCreation}
-            startDate={e.startDate}
-            endDate={e.endDate}
-            setEndDate={date => (e.endDate = date)}
-            description={e.description}
-            owner={e.owner}
-            location={e.location}
-            // Props
-            title={e.title}
-            // Others
-            key={e.renderKey || e.id}
-          />
-        )
-      )}
+      {[
+        ...(!editMode && selectedEvent ? [selectedEvent] : []),
+        ...localEvents
+      ].map(e => (
+        <CalendarEvent
+          // Dimensions dataeventClick
+          overlayBounds={dimensions.overlayBounds}
+          dayWidth={dimensions.dayWidth}
+          minuteHeight={dimensions.minuteHeight}
+          // Event Callbacks
+          onHeightChangeStop={() => eventHeightChangeStop(e)}
+          onClick={() => eventClick(e)}
+          onEdit={false}
+          onCopy={false}
+          onDelete={false}
+          // Event data
+          resizeOnCreation={e.resizeOnCreation}
+          startDate={e.startDate}
+          endDate={e.endDate}
+          setEndDate={date => (e.endDate = date)}
+          description={e.description}
+          owner={e.owner}
+          location={e.location}
+          // Props
+          title={e.title}
+          // Others
+          key={e.renderKey || e.id}
+        />
+      ))}
     </InputOverlay>
   );
 };
