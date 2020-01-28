@@ -33,7 +33,9 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useMemo
+  useMemo,
+  createContext,
+  useContext
 } from "react";
 
 import {
@@ -220,8 +222,7 @@ const CalendarEventModal = props => {
   const actionHandler = useCallback(
     action => e => {
       setOpenState(false);
-      var newEvent = Object.assign({}, calEvent);
-      newEvent = Object.assign(newEvent, {
+      Object.assign(calEvent, {
         title: title || "(No Title)",
         description: description,
         location: location,
@@ -229,7 +230,7 @@ const CalendarEventModal = props => {
         endDate: new Date(endDate)
       });
 
-      if (action) action(newEvent);
+      if (action) action(calEvent);
       reset();
     },
     [calEvent, title, description, location, startDate, endDate, reset]
@@ -514,12 +515,8 @@ const CalendarEvent = props => {
     endDate,
     setEndDate,
     title,
-    description,
     owner,
-    location,
-    onEdit,
-    onCopy,
-    onDelete
+    location
   } = props;
 
   const getHeight = useCallback(() => {
@@ -658,14 +655,8 @@ const CalendarEvent = props => {
   );
 };
 
-const CalendarEventsOverlay = ({
-  events,
-  onEventCreation,
-  onEventUpdate,
-  onEventDelete,
-  rowRef,
-  colRef
-}) => {
+const CalendarEventsOverlay = ({ events, rowRef, colRef }) => {
+  const { createEvent, updateEvent, cancelEvent } = useContext(CalendarContext);
   const overlayRef = useRef();
 
   const getDimensions = useCallback(() => {
@@ -697,7 +688,7 @@ const CalendarEventsOverlay = ({
   /**
    * Utilites functions
    */
-  const createEvent = useCallback(e => {
+  const createEventOverlay = useCallback(e => {
     var eventStartDay = getDOMElementAtPos("day-col", e.clientX, e.clientY);
     var eventStartHour = getDOMElementAtPos("hour-row", e.clientX, e.clientY);
 
@@ -812,9 +803,9 @@ const CalendarEventsOverlay = ({
       if (modalShow) return;
       setOverlayCreationMode(true);
       setEditMode(false);
-      setSelectedEvent(createEvent(e));
+      setSelectedEvent(createEventOverlay(e));
     },
-    [modalShow, setSelectedEvent, createEvent]
+    [modalShow, setSelectedEvent, createEventOverlay]
   );
 
   const overlayEventCreationStop = useCallback(e => {
@@ -835,25 +826,26 @@ const CalendarEventsOverlay = ({
 
   const eventCreationConfirm = useCallback(
     e => {
-      if (onEventCreation) {
+      if (createEvent) {
         e.resizeOnCreation = false;
-        onEventCreation(e);
+        createEvent(e);
         setSelectedEvent(false);
         setModalShow(false);
       }
     },
-    [onEventCreation, setSelectedEvent]
+    [createEvent, setSelectedEvent]
   );
 
   const eventEditConfirm = useCallback(
     e => {
-      if (onEventUpdate) {
-        onEventUpdate(e);
-        setModalShow(e);
+      if (updateEvent) {
+        updateEvent(selectedEvent);
+        setSelectedEvent(false);
+        setModalShow(false);
         setEditMode(false);
       }
     },
-    [onEventUpdate]
+    [updateEvent, selectedEvent]
   );
 
   /**
@@ -862,10 +854,10 @@ const CalendarEventsOverlay = ({
   const eventHeightChangeStop = useCallback(
     e => {
       if (!overlayCreationMode) {
-        onEventUpdate(e, e);
+        updateEvent(e, e);
       }
     },
-    [overlayCreationMode, onEventUpdate]
+    [overlayCreationMode, updateEvent]
   );
 
   const eventClick = useCallback(e => {
@@ -887,9 +879,9 @@ const CalendarEventsOverlay = ({
   const onPopoverEventDelete = useCallback(
     e => {
       setPopoverShow(false);
-      onEventDelete(selectedEvent);
+      cancelEvent(selectedEvent);
     },
-    [onEventDelete, selectedEvent]
+    [cancelEvent, selectedEvent]
   );
 
   return (
@@ -932,15 +924,11 @@ const CalendarEventsOverlay = ({
           // Event Callbacks
           onHeightChangeStop={() => eventHeightChangeStop(e)}
           onClick={() => eventClick(e)}
-          onEdit={false}
-          onCopy={false}
-          onDelete={false}
           // Event data
           resizeOnCreation={e.resizeOnCreation}
           startDate={e.startDate}
           endDate={e.endDate}
           setEndDate={date => (e.endDate = date)}
-          description={e.description}
           owner={e.owner}
           location={e.location}
           // Props
@@ -993,6 +981,8 @@ const CalendarTimeMarker = props => {
 /**
  * Calendar
  */
+const CalendarContext = createContext();
+
 const Calendar = props => {
   /**
    * Should have the events processing:
@@ -1025,21 +1015,15 @@ const Calendar = props => {
     [events, setEvents]
   );
 
-  const updateEvent = useCallback(
-    (oldEvent, newEvent) => {
-      const key = oldEvent.renderKey || oldEvent.id;
-      const id = oldEvent.renderKey ? "renderKey" : "id";
+  const updateEvent = useCallback(event => {
+    const key = event.renderKey || event.id;
+    const id = event.renderKey ? "renderKey" : "id";
 
-      const eventsCpy = [...events];
-      const eventData = eventsCpy.find(event => event[id] === key);
-      Object.assign(eventData, newEvent);
+    // Server update or queue or something to inform the DB
 
-      setEvents(eventsCpy);
-      console.log("Event Update");
-      console.log(eventData);
-    },
-    [events, setEvents]
-  );
+    console.log("Event Update");
+    console.log(event);
+  }, []);
 
   const cancelEvent = useCallback(
     oldEvent => {
@@ -1053,21 +1037,26 @@ const Calendar = props => {
     [events, setEvents]
   );
 
+  const value = useMemo(
+    () => ({
+      createEvent,
+      updateEvent,
+      cancelEvent
+    }),
+    [createEvent, updateEvent, cancelEvent]
+  );
+
   return (
     <Grid container>
       {/** Controls header */}
       <CalendarHeader changeView={setView} />
 
       {/** View mode selector */}
-      {view === viewEnum.DAY && (
-        <CalendarDayView
-          day={selectedDay}
-          events={events}
-          createEvent={createEvent}
-          updateEvent={updateEvent}
-          cancelEvent={cancelEvent}
-        />
-      )}
+      <CalendarContext.Provider value={value}>
+        {view === viewEnum.DAY && (
+          <CalendarDayView day={selectedDay} events={events} />
+        )}
+      </CalendarContext.Provider>
     </Grid>
   );
 };
@@ -1083,7 +1072,7 @@ const CalendarHeader = props => {
  * Calendar Day View
  */
 const CalendarDayView = props => {
-  const { day, events, ...other } = props;
+  const { day, events } = props;
   const switchDayHandler = useCallback(selectedDay => {
     console.log(
       "Switch day to " +
@@ -1110,37 +1099,24 @@ const CalendarDayView = props => {
   return (
     <Grid container item direction="column">
       <CalendarWeekHeader day={day} onClickCallBack={switchDayHandler} />
-      <CalendarDayBody events={filteredEvents} day={day} {...other} />
+      <CalendarDayBody events={filteredEvents} day={day} />
     </Grid>
   );
 };
 
 const CalendarDayBody = props => {
-  const {
-    events,
-    day,
-    createEvent,
-    updateEvent,
-    cancelEvent,
-    ...other
-  } = props;
+  const { events, day } = props;
   const colRef = useRef();
   const rowRef = useRef();
 
   return (
-    <CalendarDayHeaderCol
-      {...other}
-      setRowReference={r => (rowRef.current = r)}
-    >
+    <CalendarDayHeaderCol setRowReference={r => (rowRef.current = r)}>
       <CalendarDayCol
         setColReference={r => (colRef.current = r)}
         dayOfWeek={day}
       >
         <CalendarEventsOverlay
           events={events}
-          onEventCreation={createEvent}
-          onEventUpdate={updateEvent}
-          onEventDelete={cancelEvent}
           rowRef={rowRef}
           colRef={colRef}
         />
