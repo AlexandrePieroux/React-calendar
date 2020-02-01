@@ -193,30 +193,29 @@ const CalendarEventModal = props => {
   const [location, setLocation] = useState("");
 
   useEffect(() => {
+    setTitle(calEvent.title);
     setStartDate(calEvent.startDate);
     setEndDate(calEvent.endDate);
-  }, [calEvent.startDate, calEvent.endDate]);
+    setDescription(calEvent.description);
+    setLocation(calEvent.location);
+  }, [
+    calEvent.startDate,
+    calEvent.endDate,
+    calEvent.title,
+    calEvent.description,
+    calEvent.location
+  ]);
 
   useEffect(() => {
     setOpenState(open);
   }, [open]);
 
-  const reset = useCallback(
-    e => {
-      setTitle("");
-      setDescription("");
-      setLocation("");
-    },
-    [setTitle, setDescription, setLocation]
-  );
-
   const closeHandler = useCallback(
     e => {
       setOpenState(false);
       if (calEvent && onCancel) onCancel(calEvent);
-      reset();
     },
-    [onCancel, calEvent, reset]
+    [onCancel, calEvent]
   );
 
   const actionHandler = useCallback(
@@ -231,9 +230,8 @@ const CalendarEventModal = props => {
       });
 
       if (action) action(calEvent);
-      reset();
     },
-    [calEvent, title, description, location, startDate, endDate, reset]
+    [calEvent, title, description, location, startDate, endDate]
   );
 
   return (
@@ -854,7 +852,7 @@ const CalendarEventsOverlay = ({ events, rowRef, colRef }) => {
   const eventHeightChangeStop = useCallback(
     e => {
       if (!overlayCreationMode) {
-        updateEvent(e, e);
+        updateEvent(e);
       }
     },
     [overlayCreationMode, updateEvent]
